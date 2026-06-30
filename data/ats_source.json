@@ -1,0 +1,152 @@
+[
+  {
+    "candidate_id": "ats_102",
+    "name": "Krishna Bhat",
+    "email_address": "krishna@example.com",
+    "phone_raw": "+91 98765-43210",
+    "organization": "TechCorp",
+    "role_title": "Software Engineer",
+    "country_name": "India",
+    "city_name": "Bengaluru"
+  },
+  {
+    "candidate_id": "ats_103",
+    "name": "SARAH JANE O'CONNOR",
+    "email_address": "sarah.oconnor@corp.io",
+    "phone_raw": "+1-415-555-0192",
+    "organization": "DataSystems Inc.",
+    "role_title": "Senior Data Engineer",
+    "country_name": "United States",
+    "city_name": "San Francisco"
+  },
+  {
+    "candidate_id": "ats_104",
+    "name": "Léa Müller-Schmidt",
+    "email_address": "lea.muller@startup.de",
+    "phone_raw": "+49 30 12345678",
+    "organization": "Berlin AI Lab",
+    "role_title": "ML Engineer",
+    "country_name": "Germany",
+    "city_name": "Berlin"
+  },
+  {
+    "candidate_id": "ats_105",
+    "name": "Wei Zhang",
+    "email_address": "wei.zhang@techgiant.sg",
+    "phone_raw": "+65 9123 4567",
+    "organization": "TechGiant Asia",
+    "role_title": "Platform Engineer",
+    "country_name": "Singapore",
+    "city_name": "Singapore"
+  },
+  {
+    "candidate_id": "ats_106",
+    "name": "Aisha Al-Rashidi",
+    "email_address": "aisha.rashidi@consulting.ae",
+    "phone_raw": "+971 50 123 4567",
+    "organization": "Gulf Consulting Group",
+    "role_title": "Data Architect",
+    "country_name": "UAE",
+    "city_name": "Dubai"
+  },
+  {
+    "candidate_id": "ats_107",
+    "name": "James O'Brien",
+    "email_address": "james.obrien@fintech.co.uk",
+    "phone_raw": "+44 7700 900123",
+    "organization": "London FinTech Ltd",
+    "role_title": "Backend Developer",
+    "country_name": "United Kingdom",
+    "city_name": "London"
+  },
+  {
+    "candidate_id": "ats_108",
+    "name": "Priya Subramaniam",
+    "email_address": "",
+    "phone_raw": "+91 88001 12345",
+    "organization": "Infosys",
+    "role_title": "DevOps Engineer",
+    "country_name": "India",
+    "city_name": "Chennai"
+  },
+  {
+    "candidate_id": "ats_109",
+    "name": "Carlos Mendez-Rivera",
+    "email_address": "carlos.mendez@techco.mx",
+    "phone_raw": "Call me after 6pm",
+    "organization": "MexTech Solutions",
+    "role_title": "Full Stack Engineer",
+    "country_name": "Mexico",
+    "city_name": "Mexico City"
+  },
+  {
+    "candidate_id": "ats_110",
+    "name": "",
+    "email_address": "anon_candidate_110@recruiter.com",
+    "phone_raw": "+1 206 555 0101",
+    "organization": "Stealth Startup",
+    "role_title": "Software Architect",
+    "country_name": "US",
+    "city_name": "Seattle"
+  },
+  {
+    "candidate_id": "ats_111",
+    "name": "Fatima Al-Hassan",
+    "email_address": "fatima@@bademail..com",
+    "phone_raw": "123",
+    "organization": "Cairo Tech",
+    "role_title": "QA Engineer",
+    "country_name": "Egypt",
+    "city_name": "Cairo"
+  },
+  {
+    "candidate_id": "ats_112",
+    "name": "Ryo Tanaka",
+    "email_address": "ryo.tanaka@corp.jp",
+    "phone_raw": "+81 3-1234-5678",
+    "organization": "Tokyo Systems",
+    "role_title": "Site Reliability Engineer",
+    "country_name": "Japan",
+    "city_name": "Tokyo"
+  },
+  {
+    "candidate_id": "ats_113",
+    "name": "Oluwaseun Adebayo",
+    "email_address": "seun.adebayo@startupng.com",
+    "phone_raw": "+234 803 456 7890",
+    "organization": "Lagos Fintech",
+    "role_title": "Data Scientist",
+    "country_name": "Nigeria",
+    "city_name": "Lagos"
+  },
+  {
+    "candidate_id": "ats_114",
+    "name": "Sophie Beaumont",
+    "email_address": "sophie.beaumont@agence.fr",
+    "phone_raw": "+33 6 12 34 56 78",
+    "organization": "Agence Numérique",
+    "role_title": "Product Engineer",
+    "country_name": "France",
+    "city_name": "Paris"
+  },
+  {
+    "candidate_id": "ats_115",
+    "name": "null",
+    "email_address": "null",
+    "phone_raw": null,
+    "organization": null,
+    "role_title": null,
+    "country_name": "Unknown",
+    "city_name": null
+  },
+  {
+    "candidate_id": "ats_116",
+    "name": "Deepti Bhat",
+    "email_address": "deeptibt08@gmail.com",
+    "phone_raw": "+91 9876543210",
+    "organization": "Eightfold AI",
+    "role_title": "Engineering Intern",
+    "country_name": "India",
+    "city_name": "Bengaluru"
+  }
+]

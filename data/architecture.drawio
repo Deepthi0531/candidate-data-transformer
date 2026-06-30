@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="1">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ── TITLE ── -->
+    <mxCell id="title" value="Multi-Source Candidate Data Transformer — Pipeline Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="1254" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         SOURCE INPUTS (Left column)
+    ══════════════════════════════════════════════ -->
+
+    <!-- ATS JSON -->
+    <mxCell id="src_ats" value="&lt;b&gt;ATS JSON&lt;/b&gt;&lt;br&gt;Structured rows&lt;br&gt;[name, email, phone,&lt;br&gt;org, title, country]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="50" y="130" width="160" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- GitHub JSON -->
+    <mxCell id="src_gh" value="&lt;b&gt;GitHub JSON&lt;/b&gt;&lt;br&gt;Unstructured profile&lt;br&gt;[login, bio, skills,&lt;br&gt;history]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="50" y="240" width="160" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- LinkedIn JSON -->
+    <mxCell id="src_li" value="&lt;b&gt;LinkedIn JSON&lt;/b&gt;&lt;br&gt;Semi-structured&lt;br&gt;[headline, education,&lt;br&gt;compound location]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0288d1;strokeColor=#01579b;fontColor=#ffffff;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="50" y="350" width="160" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- Recruiter CSV -->
+    <mxCell id="src_csv" value="&lt;b&gt;Recruiter CSV&lt;/b&gt;&lt;br&gt;Tabular rows&lt;br&gt;[15+ candidates,&lt;br&gt;comma-delimited skills]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="50" y="460" width="160" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- Edge case badge -->
+    <mxCell id="badge_edge" value="⚠ Edge Cases: malformed phones,&lt;br&gt;null sentinels, blank rows,&lt;br&gt;duplicate emails, garbage data" style="text;html=1;strokeColor=#ff8800;fillColor=#fff2cc;align=left;verticalAlign=middle;fontSize=10;rounded=1;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="30" y="580" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 1 — INGESTION
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage1" value="&lt;b&gt;Stage 1&lt;/b&gt;&lt;br&gt;INGESTION LAYER&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Generator-based adapters&lt;br&gt;per source type.&lt;br&gt;Streams records 1-by-1.&lt;br&gt;Skips malformed inputs.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="280" y="240" width="160" height="140" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 2 — NORMALIZATION
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage2" value="&lt;b&gt;Stage 2&lt;/b&gt;&lt;br&gt;NORMALIZATION LAYER&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Pure functions per field:&lt;br&gt;• E.164 phones&lt;br&gt;• ISO-3166 countries&lt;br&gt;• YYYY-MM dates&lt;br&gt;• Skill taxonomy&lt;br&gt;• Null sentinel rejection&lt;br&gt;Returns (value, conf, method)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="510" y="200" width="170" height="180" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 3 — IDENTITY RESOLUTION
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage3" value="&lt;b&gt;Stage 3&lt;/b&gt;&lt;br&gt;IDENTITY BROKER&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Email-keyed registry.&lt;br&gt;Exact normalized match.&lt;br&gt;No email → new entity.&lt;br&gt;Tolerates name variants.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="750" y="200" width="160" height="140" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 4 — DATA MERGE ENGINE
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage4" value="&lt;b&gt;Stage 4&lt;/b&gt;&lt;br&gt;DATA MERGE ENGINE&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Source Authority Matrix:&lt;br&gt;• ATS wins: name, phone&lt;br&gt;• GitHub wins: skills&lt;br&gt;• LinkedIn wins: headline, edu&lt;br&gt;• CSV wins: years_exp&lt;br&gt;Lists: union + dedup&lt;br&gt;All provenance retained&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="980" y="180" width="170" height="200" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         CANONICAL PROFILE (centre-right)
+    ══════════════════════════════════════════════ -->
+    <mxCell id="canonical" value="&lt;b&gt;CANONICAL PROFILE&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;candidate_id, full_name&lt;br&gt;emails[], phones[]&lt;br&gt;location {city, country}&lt;br&gt;links {linkedin, github}&lt;br&gt;headline, years_experience&lt;br&gt;skills[] {name, conf, sources}&lt;br&gt;experience[], education[]&lt;br&gt;provenance[] — full lineage&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16213e;strokeColor=#0f3460;fontColor=#e94560;fontSize=12;arcSize=10;verticalAlign=top;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="750" y="440" width="200" height="180" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 5 — PROJECTION LAYER
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage5" value="&lt;b&gt;Stage 5&lt;/b&gt;&lt;br&gt;PROJECTION LAYER&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Runtime config drives shape:&lt;br&gt;• Path resolution (dot+bracket)&lt;br&gt;• Field renaming (from:)&lt;br&gt;• Per-field normalize hint&lt;br&gt;• Type coercion (string[]→str)&lt;br&gt;Zero code changes needed&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="1220" y="200" width="170" height="175" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         STAGE 6 — VALIDATION & OUTPUT
+    ══════════════════════════════════════════════ -->
+    <mxCell id="stage6" value="&lt;b&gt;Stage 6&lt;/b&gt;&lt;br&gt;VALIDATION &amp;amp; OUTPUT BROKER&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;on_missing policy:&lt;br&gt;• null → emit JSON null&lt;br&gt;• omit → drop key entirely&lt;br&gt;• error → raise + exit 2&lt;br&gt;Structural schema checks&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=12;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="1220" y="430" width="170" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         OUTPUT
+    ══════════════════════════════════════════════ -->
+    <mxCell id="output" value="&lt;b&gt;JSON Output&lt;/b&gt;&lt;br&gt;(stdout)&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Schema-valid array.&lt;br&gt;Default or custom config.&lt;br&gt;Provenance attached.&lt;br&gt;Piped to any downstream.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#1e8449;fontColor=#ffffff;fontSize=12;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="1460" y="430" width="160" height="130" as="geometry" />
+    </mxCell>
+
+    <!-- Runtime Config box -->
+    <mxCell id="rt_config" value="&lt;b&gt;runtime_config.json&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;fields[], include_confidence,&lt;br&gt;on_missing policy&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="1220" y="650" width="170" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- SAM box -->
+    <mxCell id="sam" value="&lt;b&gt;Source Authority Matrix&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Deterministic field weights&lt;br&gt;per source × per field.&lt;br&gt;No ML — fully explainable.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;arcSize=20;" vertex="1" parent="1">
+      <mxGeometry x="980" y="430" width="170" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         ARROWS — Sources → Stage 1
+    ══════════════════════════════════════════════ -->
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#6c8ebf;" edge="1" source="src_ats" target="stage1" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#82b366;" edge="1" source="src_gh" target="stage1" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#01579b;" edge="1" source="src_li" target="stage1" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#b85450;" edge="1" source="src_csv" target="stage1" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 1 → Stage 2 -->
+    <mxCell id="e5" value="raw records" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="stage1" target="stage2" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 2 → Stage 3 -->
+    <mxCell id="e6" value="partial profiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="stage2" target="stage3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 3 → Stage 4 -->
+    <mxCell id="e7" value="new / existing?" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="stage3" target="stage4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 4 ↔ Canonical -->
+    <mxCell id="e8" value="merged profile" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="stage4" target="canonical" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- SAM → Stage 4 -->
+    <mxCell id="e_sam" value="authority scores" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#d6b656;fontColor=#d6b656;fontSize=10;dashed=1;" edge="1" source="sam" target="stage4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Canonical → Stage 5 -->
+    <mxCell id="e9" value="serialize" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="canonical" target="stage5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 5 → Stage 6 -->
+    <mxCell id="e10" value="projected dict" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e94560;fontColor=#e94560;fontSize=10;" edge="1" source="stage5" target="stage6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stage 6 → Output -->
+    <mxCell id="e11" value="valid JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#27ae60;fontColor=#27ae60;fontSize=10;" edge="1" source="stage6" target="output" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- rt_config → Stage 5 -->
+    <mxCell id="e_cfg" value="field specs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#d6b656;fontColor=#d6b656;fontSize=10;dashed=1;" edge="1" source="rt_config" target="stage5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- rt_config → Stage 6 -->
+    <mxCell id="e_cfg2" value="on_missing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#d6b656;fontColor=#d6b656;fontSize=10;dashed=1;" edge="1" source="rt_config" target="stage6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════
+         LEGEND
+    ══════════════════════════════════════════════ -->
+    <mxCell id="legend_title" value="LEGEND" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="50" y="710" width="200" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1" value="Structured source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="735" width="130" height="25" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2" value="Unstructured source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="190" y="735" width="140" height="25" as="geometry" />
+    </mxCell>
+    <mxCell id="leg3" value="Pipeline stage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#e94560;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="340" y="735" width="120" height="25" as="geometry" />
+    </mxCell>
+    <mxCell id="leg4" value="Config / policy input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="470" y="735" width="140" height="25" as="geometry" />
+    </mxCell>
+    <mxCell id="leg5" value="Output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#1e8449;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="620" y="735" width="80" height="25" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

@@ -1,0 +1,141 @@
+[
+  {
+    "login": "krishnabhat",
+    "name": "Krishna B. Bhat",
+    "email": "krishna@example.com",
+    "phone": "Call after 5 PM",
+    "bio": "Backend developer passionate about Python, Go, and building data pipelines.",
+    "skills_extracted": ["python", "Python3", "Go", "sql", "docker", "kubernetes"],
+    "history": [
+      {
+        "company": "TechCorp",
+        "role": "Backend Engineer",
+        "start": "May 2024",
+        "end": "Present"
+      },
+      {
+        "company": "StartupXYZ",
+        "role": "Junior Developer",
+        "start": "2022-06",
+        "end": "2024-04"
+      }
+    ]
+  },
+  {
+    "login": "sarah-oc",
+    "name": "Sarah Jane O'Connor",
+    "email": "sarah.oconnor@corp.io",
+    "phone": "+1-415-555-0192",
+    "bio": "Data engineer with 8 years building petabyte-scale pipelines at FAANG.",
+    "skills_extracted": ["spark", "kafka", "python", "airflow", "aws", "bigquery", "dbt"],
+    "history": [
+      {
+        "company": "DataSystems Inc.",
+        "role": "Senior Data Engineer",
+        "start": "January 2021",
+        "end": "Present"
+      },
+      {
+        "company": "Meta",
+        "role": "Data Engineer",
+        "start": "2018-03",
+        "end": "2021-01"
+      }
+    ]
+  },
+  {
+    "login": "lea-dev",
+    "name": "Léa Müller",
+    "email": "lea.muller@startup.de",
+    "phone": null,
+    "bio": "ML Engineer specializing in NLP and LLM fine-tuning. Open-source contributor.",
+    "skills_extracted": ["pytorch", "tensorflow", "python", "huggingface", "mlflow", "docker"],
+    "history": [
+      {
+        "company": "Berlin AI Lab",
+        "role": "ML Engineer",
+        "start": "2023-09",
+        "end": "current"
+      }
+    ]
+  },
+  {
+    "login": "wei-zhang-sg",
+    "name": "Wei Zhang",
+    "email": "wei.zhang@techgiant.sg",
+    "phone": "+6591234567",
+    "bio": "Platform engineer building distributed systems at scale. Kubernetes contributor.",
+    "skills_extracted": ["kubernetes", "go", "rust", "grpc", "terraform", "gcp", "linux"],
+    "history": [
+      {
+        "company": "TechGiant Asia",
+        "role": "Platform Engineer",
+        "start": "06/2022",
+        "end": "now"
+      },
+      {
+        "company": "ByteDance",
+        "role": "Infrastructure Engineer",
+        "start": "2019",
+        "end": "2022-05"
+      }
+    ]
+  },
+  {
+    "login": "ryo-tanaka",
+    "name": "Ryo Tanaka",
+    "email": "ryo.tanaka@corp.jp",
+    "phone": "+81312345678",
+    "bio": "SRE at Tokyo Systems. Love observability, chaos engineering, and coffee.",
+    "skills_extracted": ["python", "go", "prometheus", "grafana", "kubernetes", "bash", "linux"],
+    "history": [
+      {
+        "company": "Tokyo Systems",
+        "role": "SRE",
+        "start": "March 2020",
+        "end": "Present"
+      }
+    ]
+  },
+  {
+    "login": "seun-dev",
+    "name": "Oluwaseun Adebayo",
+    "email": "seun.adebayo@startupng.com",
+    "phone": "",
+    "bio": "Data scientist and ML practitioner. Building AI solutions for African markets.",
+    "skills_extracted": ["python", "r", "pandas", "numpy", "scikit-learn", "sql", "tableau"],
+    "history": [
+      {
+        "company": "Lagos Fintech",
+        "role": "Data Scientist",
+        "start": "2021-07",
+        "end": "ongoing"
+      }
+    ]
+  },
+  {
+    "login": "new-user-no-email",
+    "name": "Ghost Developer",
+    "email": null,
+    "phone": null,
+    "bio": null,
+    "skills_extracted": ["c++", "rust"],
+    "history": []
+  },
+  {
+    "login": "deeptibt08",
+    "name": "Deepti Bhat",
+    "email": "deeptibt08@gmail.com",
+    "phone": "+919876543210",
+    "bio": "Engineering intern at Eightfold. Passionate about data pipelines and ML systems.",
+    "skills_extracted": ["python", "sql", "pandas", "docker", "fastapi", "git"],
+    "history": [
+      {
+        "company": "Eightfold AI",
+        "role": "Engineering Intern",
+        "start": "July 2026",
+        "end": "December 2026"
+      }
+    ]
+  }
+]

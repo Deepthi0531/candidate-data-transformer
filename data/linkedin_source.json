@@ -1,0 +1,105 @@
+[
+  {
+    "profile_url": "https://linkedin.com/in/sarah-oconnor-data",
+    "full_name": "Sarah Jane O'Connor",
+    "email": "sarah.oconnor@corp.io",
+    "headline": "Senior Data Engineer | Spark | Kafka | AWS | 8 Years Experience",
+    "location_raw": "San Francisco, California, United States",
+    "connections": 1243,
+    "skills": ["Apache Spark", "Apache Kafka", "Python", "AWS", "Airflow", "dbt", "BigQuery", "Snowflake"],
+    "experience": [
+      {
+        "company": "DataSystems Inc.",
+        "title": "Senior Data Engineer",
+        "start_date": "Jan 2021",
+        "end_date": "Present",
+        "description": "Lead the data platform team of 6 engineers, processing 5TB/day."
+      },
+      {
+        "company": "Meta",
+        "title": "Data Engineer",
+        "start_date": "Mar 2018",
+        "end_date": "Jan 2021",
+        "description": "Built and maintained petabyte-scale data warehousing solutions."
+      },
+      {
+        "company": "Twitter",
+        "title": "Junior Data Analyst",
+        "start_date": "Jun 2016",
+        "end_date": "Feb 2018",
+        "description": "Wrote SQL pipelines and dashboards for the ads team."
+      }
+    ],
+    "education": [
+      {
+        "institution": "UC Berkeley",
+        "degree": "B.S.",
+        "field": "Computer Science",
+        "end_year": 2016
+      }
+    ]
+  },
+  {
+    "profile_url": "https://linkedin.com/in/aisha-alrashidi",
+    "full_name": "Aisha Al-Rashidi",
+    "email": "aisha.rashidi@consulting.ae",
+    "headline": "Data Architect | Cloud | Azure | Databricks",
+    "location_raw": "Dubai, United Arab Emirates",
+    "connections": 890,
+    "skills": ["Azure", "Databricks", "Python", "SQL", "Power BI", "Data Modeling"],
+    "experience": [
+      {
+        "company": "Gulf Consulting Group",
+        "title": "Data Architect",
+        "start_date": "Sep 2020",
+        "end_date": "Present",
+        "description": "Designed enterprise data lake architecture for Fortune 500 clients."
+      }
+    ],
+    "education": [
+      {
+        "institution": "American University of Sharjah",
+        "degree": "M.S.",
+        "field": "Information Systems",
+        "end_year": 2018
+      }
+    ]
+  },
+  {
+    "profile_url": "https://linkedin.com/in/deepti-bhat-eng",
+    "full_name": "Deepti Bhat",
+    "email": "deeptibt08@gmail.com",
+    "headline": "Engineering Intern at Eightfold AI | Python | Data Pipelines",
+    "location_raw": "Bengaluru, Karnataka, India",
+    "connections": 312,
+    "skills": ["Python", "SQL", "FastAPI", "Docker", "Pandas", "Git", "PostgreSQL"],
+    "experience": [
+      {
+        "company": "Eightfold AI",
+        "title": "Engineering Intern",
+        "start_date": "Jul 2026",
+        "end_date": "Dec 2026",
+        "description": "Building multi-source candidate data transformation pipeline."
+      }
+    ],
+    "education": [
+      {
+        "institution": "R.V. College of Engineering",
+        "degree": "B.E.",
+        "field": "Computer Science",
+        "end_year": 2026
+      }
+    ]
+  },
+  {
+    "profile_url": "https://linkedin.com/in/",
+    "full_name": "",
+    "email": "no-reply@linkedin.com",
+    "headline": null,
+    "location_raw": "somewhere",
+    "connections": 0,
+    "skills": [],
+    "experience": [],
+    "education": []
+  }
+]

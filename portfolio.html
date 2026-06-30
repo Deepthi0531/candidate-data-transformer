@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Source Candidate Data Transformer | Deepti Bhat</title>
+  <meta name="description" content="Interactive case study: a deterministic 6-stage pipeline that unifies candidate data from ATS, GitHub, LinkedIn, and CSV sources into a single canonical profile." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── CSS RESET & TOKENS ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0a0a0f;
+      --surface:    #13131f;
+      --surface2:   #1c1c2e;
+      --border:     #2a2a40;
+      --accent:     #e94560;
+      --accent2:    #0f3460;
+      --accent3:    #533483;
+      --gold:       #f0c040;
+      --green:      #27ae60;
+      --blue:       #2980b9;
+      --text:       #e8e8f0;
+      --text-dim:   #8888aa;
+      --radius:     12px;
+      --radius-lg:  20px;
+      --font:       'Inter', system-ui, sans-serif;
+      --mono:       'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── SCROLLBAR ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    /* ── UTILITIES ───────────────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+    .badge {
+      display: inline-block; padding: 4px 12px; border-radius: 99px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .badge-red    { background: rgba(233,69,96,.15);  color: var(--accent); border: 1px solid rgba(233,69,96,.3); }
+    .badge-green  { background: rgba(39,174,96,.15);  color: var(--green);  border: 1px solid rgba(39,174,96,.3); }
+    .badge-blue   { background: rgba(41,128,185,.15); color: var(--blue);   border: 1px solid rgba(41,128,185,.3); }
+    .badge-gold   { background: rgba(240,192,64,.12); color: var(--gold);   border: 1px solid rgba(240,192,64,.3); }
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+    }
+    h2.section-title {
+      font-size: clamp(28px, 4vw, 42px); font-weight: 800;
+      line-height: 1.2; margin-bottom: 16px;
+    }
+    h2.section-title span { color: var(--accent); }
+    .section-desc { color: var(--text-dim); font-size: 17px; max-width: 640px; margin-bottom: 56px; }
+    .flow-row--spaced { margin-bottom: 32px; }
+    .stage-icon-ingest { background: rgba(108,142,191,.15); border: 1px solid rgba(108,142,191,.3); }
+    .stage-icon-normalize { background: rgba(155,89,182,.15); border: 1px solid rgba(155,89,182,.3); }
+    .stage-icon-identity { background: rgba(41,128,185,.15); border: 1px solid rgba(41,128,185,.3); }
+    .stage-icon-merge { background: rgba(240,192,64,.12); border: 1px solid rgba(240,192,64,.3); }
+    .stage-icon-project { background: rgba(39,174,96,.1); border: 1px solid rgba(39,174,96,.3); }
+    .stage-icon-validate { background: rgba(231,76,60,.1); border: 1px solid rgba(231,76,60,.3); }
+    .before-after-heading { margin-top: 60px; margin-bottom: 16px; font-size: 22px; font-weight: 700; }
+    .before-after-intro { color: var(--text-dim); margin-bottom: 24px; }
+    .ba-body-before { color: #e06c75; }
+    .ba-body-after { color: #98c379; }
+    .engineering-principles { margin-top: 60px; }
+    .engineering-principles-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+    .footer-name { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .footer-meta { margin-top: 20px; }
+
+    /* ── NAVBAR ─────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10,10,15,.85); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-size: 16px; font-weight: 700; color: var(--text); }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--text-dim); text-decoration: none; font-size: 14px;
+      font-weight: 500; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 80px 0 60px;
+      background: radial-gradient(ellipse at 20% 50%, rgba(83,52,131,.2) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(233,69,96,.1) 0%, transparent 50%),
+                  var(--bg);
+      position: relative; overflow: hidden;
+    }
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.2;
+    }
+    .hero-inner { position: relative; }
+    .hero-eyebrow {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    h1 {
+      font-size: clamp(36px, 6vw, 72px); font-weight: 900;
+      line-height: 1.05; margin-bottom: 24px;
+    }
+    h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc { font-size: 18px; color: var(--text-dim); max-width: 620px; margin-bottom: 40px; }
+    .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn {
+      padding: 14px 28px; border-radius: var(--radius); font-size: 15px;
+      font-weight: 600; text-decoration: none; cursor: pointer; border: none;
+      transition: all .25s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+    }
+    .btn-primary:hover { background: #c7374f; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,69,96,.35); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    .hero-stats {
+      display: flex; gap: 48px; margin-top: 64px; flex-wrap: wrap;
+    }
+    .stat-item { text-align: left; }
+    .stat-num {
+      font-size: 36px; font-weight: 800; color: var(--text);
+      background: linear-gradient(135deg, #fff, var(--text-dim));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+    /* ── SECTION WRAPPER ─────────────────────────────────── */
+    .section { padding: 100px 0; }
+    .section-alt { background: var(--surface); }
+
+    /* ── JOURNEY TIMELINE ────────────────────────────────── */
+    .timeline { position: relative; }
+    .timeline::before {
+      content: ''; position: absolute; left: 28px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent3), transparent);
+    }
+    .tl-item {
+      display: flex; gap: 40px; margin-bottom: 56px; position: relative;
+    }
+    .tl-dot {
+      flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%;
+      background: var(--surface2); border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; z-index: 1;
+    }
+    .tl-content { flex: 1; }
+    .tl-phase {
+      font-size: 11px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+    }
+    .tl-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .tl-desc { color: var(--text-dim); font-size: 15px; }
+    .tl-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+    /* ── INTERACTIVE PIPELINE ────────────────────────────── */
+    #pipeline-section { padding: 100px 0; background: var(--bg); }
+
+    .pipeline-wrapper {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+
+    .pipeline-tabs {
+      display: flex; border-bottom: 1px solid var(--border); overflow-x: auto;
+    }
+    .pipeline-tab {
+      padding: 18px 28px; font-size: 13px; font-weight: 600;
+      color: var(--text-dim); cursor: pointer; border: none;
+      background: transparent; white-space: nowrap; border-bottom: 3px solid transparent;
+      transition: all .2s; position: relative;
+    }
+    .pipeline-tab:hover { color: var(--text); background: var(--surface2); }
+    .pipeline-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .pipeline-content { padding: 0; }
+    .pipeline-panel { display: none; padding: 40px; }
+    .pipeline-panel.active { display: block; }
+
+    .stage-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+    .stage-icon {
+      width: 60px; height: 60px; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+    }
+    .stage-meta h3 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .stage-meta p { color: var(--text-dim); font-size: 15px; }
+
+    .stage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+    @media (max-width: 700px) { .stage-grid { grid-template-columns: 1fr; } }
+
+    .stage-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .stage-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
+    .stage-card ul { list-style: none; }
+    .stage-card ul li {
+      font-size: 14px; color: var(--text-dim); padding: 4px 0;
+      border-bottom: 1px solid var(--border); display: flex; gap: 8px;
+    }
+    .stage-card ul li:last-child { border-bottom: none; }
+    .stage-card ul li::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+    .code-block {
+      background: #0d0d1a; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.7;
+      overflow-x: auto; margin-top: 20px; color: #c8d3f5;
+    }
+    .code-block .kw { color: #bb9af7; }
+    .code-block .str { color: #9ece6a; }
+    .code-block .num { color: #ff9e64; }
+    .code-block .cm { color: #565f89; font-style: italic; }
+    .code-block .fn { color: #7aa2f7; }
+
+    /* FLOW DIAGRAM inside pipeline panel */
+    .flow-row {
+      display: flex; align-items: center; gap: 0; overflow-x: auto;
+      padding: 24px 0; flex-wrap: nowrap;
+    }
+    .flow-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 18px;
+      font-size: 13px; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+      cursor: pointer; transition: all .2s;
+    }
+    .flow-box:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .flow-box.src-ats    { border-color: #6c8ebf; color: #6c8ebf; }
+    .flow-box.src-gh     { border-color: #82b366; color: #82b366; }
+    .flow-box.src-li     { border-color: #0288d1; color: #0288d1; }
+    .flow-box.src-csv    { border-color: #b85450; color: #b85450; }
+    .flow-box.stage      { border-color: var(--accent); color: var(--text); background: rgba(233,69,96,.08); }
+    .flow-box.canonical  { border-color: var(--gold); color: var(--gold); background: rgba(240,192,64,.06); }
+    .flow-box.output     { border-color: var(--green); color: var(--green); background: rgba(39,174,96,.08); }
+    .flow-arrow { font-size: 20px; color: var(--text-dim); padding: 0 8px; flex-shrink: 0; }
+
+    /* Source pills */
+    .source-pills { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+    /* ── DATA SECTION ─────────────────────────────────────── */
+    .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .data-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; transition: all .25s;
+    }
+    .data-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(233,69,96,.1); }
+    .data-card-icon { font-size: 32px; margin-bottom: 16px; }
+    .data-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .data-card p { color: var(--text-dim); font-size: 14px; margin-bottom: 16px; }
+    .data-card .meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── EDGE CASES ──────────────────────────────────────── */
+    .edge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+    .edge-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; position: relative; overflow: hidden;
+    }
+    .edge-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    }
+    .edge-card.type-phone::before  { background: #e74c3c; }
+    .edge-card.type-name::before   { background: #9b59b6; }
+    .edge-card.type-email::before  { background: #3498db; }
+    .edge-card.type-date::before   { background: #f39c12; }
+    .edge-card.type-merge::before  { background: #27ae60; }
+    .edge-card.type-source::before { background: #1abc9c; }
+    .edge-input {
+      font-family: var(--mono); font-size: 12px; background: #0d0d1a;
+      border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
+      color: #e74c3c; margin-bottom: 10px;
+    }
+    .edge-output {
+      font-family: var(--mono); font-size: 12px; background: #0d0d1a;
+      border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
+      color: var(--green);
+    }
+    .edge-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+    .edge-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .edge-explain { font-size: 13px; color: var(--text-dim); margin-top: 10px; }
+
+    /* ── METRICS ────────────────────────────────────────── */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .metric-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px; text-align: center;
+      transition: all .25s;
+    }
+    .metric-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .metric-num {
+      font-size: 42px; font-weight: 900; margin-bottom: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .metric-label { color: var(--text-dim); font-size: 14px; }
+    .metric-sub { font-size: 11px; color: var(--text-dim); margin-top: 6px; opacity: .7; }
+
+    /* BEFORE / AFTER */
+    .before-after {
+      display: grid; grid-template-columns: 1fr 48px 1fr; gap: 0;
+      align-items: start; margin-top: 40px;
+    }
+    @media (max-width: 700px) {
+      .before-after { grid-template-columns: 1fr; }
+      .ba-divider { display: none; }
+    }
+    .ba-panel {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .ba-header {
+      padding: 12px 20px; font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .ba-before .ba-header { background: rgba(231,76,60,.15); color: #e74c3c; border-bottom: 1px solid rgba(231,76,60,.2); }
+    .ba-after .ba-header  { background: rgba(39,174,96,.15);  color: var(--green); border-bottom: 1px solid rgba(39,174,96,.2); }
+    .ba-body { padding: 20px; font-family: var(--mono); font-size: 12px; line-height: 1.8; }
+    .ba-divider {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--accent);
+    }
+
+    /* ── SAM TABLE ───────────────────────────────────────── */
+    .sam-table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    .sam-table th {
+      background: var(--surface2); padding: 12px 16px; text-align: left;
+      font-size: 12px; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--text-dim);
+      border-bottom: 2px solid var(--border);
+    }
+    .sam-table td {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .sam-table tr:last-child td { border-bottom: none; }
+    .sam-table tr:hover td { background: rgba(255,255,255,.03); }
+    .sam-table td:first-child { font-family: var(--mono); color: var(--accent); font-size: 13px; }
+    .score-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: 12px; font-weight: 700; font-family: var(--mono);
+    }
+    .score-high { background: rgba(39,174,96,.2); color: var(--green); }
+    .score-mid  { background: rgba(240,192,64,.2); color: var(--gold); }
+    .score-low  { background: rgba(231,76,60,.2);  color: #e74c3c; }
+
+    /* ── VIDEO SCRIPT SECTION ────────────────────────────── */
+    .script-timeline { position: relative; padding-left: 40px; }
+    .script-timeline::before {
+      content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--blue), var(--accent3));
+    }
+    .script-item {
+      position: relative; margin-bottom: 40px;
+    }
+    .script-item::before {
+      content: ''; position: absolute; left: -34px; top: 8px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+    }
+    .script-time {
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .script-screen {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px; margin-bottom: 12px;
+    }
+    .script-screen h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--blue); }
+    .script-screen p { font-size: 13px; color: var(--text-dim); }
+    .script-talk {
+      background: rgba(83,52,131,.15); border: 1px solid rgba(83,52,131,.3);
+      border-radius: var(--radius); padding: 16px 20px;
+    }
+    .script-talk h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--accent3); }
+    .script-talk p { font-size: 13px; color: var(--text-dim); font-style: italic; }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 48px 0; text-align: center;
+    }
+    footer p { color: var(--text-dim); font-size: 14px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ──────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .5; }
+    }
+    .fade-up { opacity: 0; animation: fadeUp .6s ease forwards; }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+    .delay-4 { animation-delay: .4s; }
+
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); animation: pulse 1.5s ease-in-out infinite;
+      margin-right: 6px; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══════════════════════════════════════════════ -->
+<nav id="navbar">
+  <div class="nav-logo">Deepti <span>Bhat</span></div>
+  <ul class="nav-links">
+    <li><a href="#journey">Journey</a></li>
+    <li><a href="#pipeline-section">Pipeline</a></li>
+    <li><a href="#data-section">Dataset</a></li>
+    <li><a href="#edge-cases">Edge Cases</a></li>
+    <li><a href="#impact">Impact</a></li>
+    <li><a href="#video-script">Demo Script</a></li>
+  </ul>
+</nav>
+
+<!-- ══ HERO ═════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="container hero-inner">
+    <div class="hero-eyebrow fade-up">
+      <span class="badge badge-red">Eightfold Engineering Intern</span>
+      <span class="badge badge-gold">Jul – Dec 2026</span>
+      <span class="badge badge-green"><span class="live-dot"></span>All Tests Passing</span>
+    </div>
+
+    <h1 class="fade-up delay-1">
+      Multi-Source<br/>
+      <span class="highlight">Candidate Data</span><br/>
+      Transformer
+    </h1>
+
+    <p class="hero-desc fade-up delay-2">
+      A deterministic, streaming 6-stage pipeline that ingests candidate profiles
+      from <strong>ATS, GitHub, LinkedIn, and Recruiter CSV</strong> — resolves identities,
+      merges conflicts using a Source Authority Matrix, and emits a single trustworthy
+      canonical record with full provenance.
+    </p>
+
+    <div class="hero-ctas fade-up delay-3">
+      <a href="#pipeline-section" class="btn btn-primary">▶ Explore Pipeline</a>
+      <a href="#edge-cases" class="btn btn-ghost">⚠ View Edge Cases</a>
+    </div>
+
+    <div class="hero-stats fade-up delay-4">
+      <div class="stat-item">
+        <div class="stat-num" id="cnt-candidates">35+</div>
+        <div class="stat-label">Test Candidates</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Source Types</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Pipeline Stages</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">80+</div>
+        <div class="stat-label">Unit Tests</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Deterministic</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ JOURNEY TIMELINE ═══════════════════════════════ -->
+<section id="journey" class="section">
+  <div class="container">
+    <p class="section-label">Phase 1</p>
+    <h2 class="section-title">The <span>Journey</span></h2>
+    <p class="section-desc">From problem statement to production-grade pipeline — here's how it was built.</p>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot">🔍</div>
+        <div class="tl-content">
+          <div class="tl-phase">Day 1 — Problem Analysis</div>
+          <div class="tl-title">Understanding the Multi-Source Challenge</div>
+          <div class="tl-desc">Read the Eightfold problem statement carefully. The core insight: "wrong-but-confident is worse than honestly-empty." Every field needs a provenance record. Downstream products depend on trustworthiness, not completeness.</div>
+          <div class="tl-tags">
+            <span class="badge badge-blue">Requirements</span>
+            <span class="badge badge-gold">Architecture Design</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">🏗️</div>
+        <div class="tl-content">
+          <div class="tl-phase">Day 2 — Technical Design</div>
+          <div class="tl-title">Designing the 6-Stage Pipeline</div>
+          <div class="tl-desc">Designed the stage separation: Ingest → Normalize → Identity Resolve → Merge → Project → Validate. Key decision: use generators throughout ingestion so memory usage is O(candidates) not O(sources × candidates). Chose Pydantic v2 for schema validation.</div>
+          <div class="tl-tags">
+            <span class="badge badge-red">Architecture</span>
+            <span class="badge badge-blue">Pydantic v2</span>
+            <span class="badge badge-gold">Generator Pattern</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">⚙️</div>
+        <div class="tl-content">
+          <div class="tl-phase">Day 3-4 — Core Implementation</div>
+          <div class="tl-title">Building Normalizers & Identity Resolution</div>
+          <div class="tl-desc">Implemented pure, stateless normalizer functions returning (value, confidence, method) triples. Built the email-keyed IdentityBroker. Key challenge: E.164 phone normalization — detecting prose values like "Call after 5 PM" before attempting to parse digits.</div>
+          <div class="tl-tags">
+            <span class="badge badge-green">E.164 Phones</span>
+            <span class="badge badge-blue">ISO-3166 Countries</span>
+            <span class="badge badge-red">Skill Taxonomy</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">⚖️</div>
+        <div class="tl-content">
+          <div class="tl-phase">Day 5 — Merge Engine</div>
+          <div class="tl-title">Source Authority Matrix — Deterministic Conflict Resolution</div>
+          <div class="tl-desc">Built the SAM: a static weight table mapping (field × source) → authority score. When two sources disagree, the higher-scored source wins. Deliberately no ML — same inputs always produce the same output. Critical for audit trails in hiring decisions.</div>
+          <div class="tl-tags">
+            <span class="badge badge-gold">Deterministic</span>
+            <span class="badge badge-red">Conflict Resolution</span>
+            <span class="badge badge-green">Provenance Tracking</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">📊</div>
+        <div class="tl-content">
+          <div class="tl-phase">Phase 2 — Scale-Up</div>
+          <div class="tl-title">Dataset Expansion: 1 → 35+ Candidates, 4 Source Types</div>
+          <div class="tl-desc">Added LinkedIn JSON and Recruiter CSV adapters. Expanded dataset from 1 candidate to 35+ covering 15+ countries, all-caps names, null sentinels, malformed phones, duplicate emails, empty rows, and ghost profiles. Extended skill taxonomy to 80+ entries.</div>
+          <div class="tl-tags">
+            <span class="badge badge-blue">LinkedIn Adapter</span>
+            <span class="badge badge-red">CSV Adapter</span>
+            <span class="badge badge-gold">80+ Skill Entries</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">🧪</div>
+        <div class="tl-content">
+          <div class="tl-phase">Phase 3 — Testing</div>
+          <div class="tl-title">80+ Tests: Edge Cases, Integration, Happy Paths</div>
+          <div class="tl-desc">Wrote comprehensive pytest suites covering every normalizer and pipeline stage. Key tests: prose phone rejected, null sentinel name, same email across sources merges to one profile, on_missing=error raises correctly, garbage JSON source doesn't crash pipeline.</div>
+          <div class="tl-tags">
+            <span class="badge badge-green">pytest</span>
+            <span class="badge badge-red">Edge Cases</span>
+            <span class="badge badge-blue">Integration Tests</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ INTERACTIVE PIPELINE ═══════════════════════════ -->
+<section id="pipeline-section">
+  <div class="container">
+    <p class="section-label">Phase 2 — Deep Dive</p>
+    <h2 class="section-title">The <span>6-Stage Pipeline</span></h2>
+    <p class="section-desc">Click each stage to explore the design decisions, input/output contracts, and edge-case handling.</p>
+
+    <!-- Full flow row -->
+    <div class="flow-row flow-row--spaced">
+      <div class="source-pills">
+        <div class="flow-box src-ats">ATS JSON</div>
+        <div class="flow-box src-gh">GitHub JSON</div>
+        <div class="flow-box src-li">LinkedIn JSON</div>
+        <div class="flow-box src-csv">Recruiter CSV</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box stage" onclick="switchTab(0)">① Ingest</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box stage" onclick="switchTab(1)">② Normalize</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box stage" onclick="switchTab(2)">③ Identity</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box stage" onclick="switchTab(3)">④ Merge</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box canonical" onclick="switchTab(4)">⑤ Project</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box output" onclick="switchTab(5)">⑥ Validate</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box output">JSON out</div>
+    </div>
+
+    <div class="pipeline-wrapper">
+      <div class="pipeline-tabs" id="pipelineTabs">
+        <button class="pipeline-tab active" onclick="switchTab(0)" id="tab-0">① Ingestion Layer</button>
+        <button class="pipeline-tab" onclick="switchTab(1)" id="tab-1">② Normalization</button>
+        <button class="pipeline-tab" onclick="switchTab(2)" id="tab-2">③ Identity Resolution</button>
+        <button class="pipeline-tab" onclick="switchTab(3)" id="tab-3">④ Merge Engine (SAM)</button>
+        <button class="pipeline-tab" onclick="switchTab(4)" id="tab-4">⑤ Projection Layer</button>
+        <button class="pipeline-tab" onclick="switchTab(5)" id="tab-5">⑥ Validate & Emit</button>
+      </div>
+
+      <div class="pipeline-content">
+
+        <!-- STAGE 1: INGESTION -->
+        <div class="pipeline-panel active" id="panel-0">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-ingest">📥</div>
+            <div class="stage-meta">
+              <h3>Stage 1 — Ingestion Layer</h3>
+              <p>Generator-based adapters dispatch each source file to the correct reader. Memory model: O(candidates), not O(file size).</p>
+            </div>
+          </div>
+          <div class="stage-grid">
+            <div class="stage-card">
+              <h4>Registered Adapters</h4>
+              <ul>
+                <li><code>ats</code> → expects JSON array of rows</li>
+                <li><code>github</code> → JSON object OR array</li>
+                <li><code>linkedin</code> → JSON array of profiles</li>
+                <li><code>recruiter_csv</code> → CSV with header row</li>
+              </ul>
+            </div>
+            <div class="stage-card">
+              <h4>Resilience Behaviors</h4>
+              <ul>
+                <li>Malformed JSON → logged, skipped</li>
+                <li>Non-dict record → warned, skipped</li>
+                <li>Unknown source type → warning only</li>
+                <li>Blank CSV rows → silently skipped</li>
+                <li>BOM-stripping on CSV (utf-8-sig)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+<span class="cm"># Every adapter uses yield — memory-efficient streaming</span>
+<span class="kw">def</span> <span class="fn">ingest_ats_source</span>(path: Path) → Generator[Dict, None, None]:
+    raw = _load_json(path)
+    <span class="kw">if not</span> isinstance(raw, list):
+        <span class="kw">raise</span> InvalidSourceFormatError(...)
+    <span class="kw">for</span> record <span class="kw">in</span> raw:
+        <span class="kw">if not</span> isinstance(record, dict):
+            logger.warning(<span class="str">"Skipping non-dict record"</span>)
+            <span class="kw">continue</span>
+        record[<span class="str">"_source_label"</span>] = <span class="str">"ats"</span>
+        <span class="kw">yield</span> record  <span class="cm"># one record at a time</span>
+          </div>
+        </div>
+
+        <!-- STAGE 2: NORMALIZATION -->
+        <div class="pipeline-panel" id="panel-1">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-normalize">🔧</div>
+            <div class="stage-meta">
+              <h3>Stage 2 — Normalization Layer</h3>
+              <p>Pure, stateless functions. Every function returns <code>(value, confidence, method)</code> — the method drives provenance records.</p>
+            </div>
+          </div>
+          <div class="stage-grid">
+            <div class="stage-card">
+              <h4>Normalizers</h4>
+              <ul>
+                <li><code>normalize_phone</code> → E.164 format</li>
+                <li><code>normalize_country</code> → ISO-3166 alpha-2</li>
+                <li><code>normalize_date</code> → YYYY-MM</li>
+                <li><code>normalize_email</code> → lowercase + validate</li>
+                <li><code>normalize_name</code> → NFC + null sentinel check</li>
+                <li><code>canonicalize_skill</code> → taxonomy lookup</li>
+                <li><code>normalize_linkedin_url</code> → canonical form</li>
+                <li><code>normalize_city_from_compound</code> → city split</li>
+              </ul>
+            </div>
+            <div class="stage-card">
+              <h4>Confidence Levels</h4>
+              <ul>
+                <li><strong>1.0</strong> — exact match or already valid</li>
+                <li><strong>0.95</strong> — month-name + year date</li>
+                <li><strong>0.90</strong> — skill taxonomy normalised</li>
+                <li><strong>0.85</strong> — phone reassembled (no +)</li>
+                <li><strong>0.75</strong> — country name normalised</li>
+                <li><strong>0.5</strong> — unknown skill, title-cased</li>
+                <li><strong>0.0</strong> — invalid / empty → None</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+<span class="cm"># Every normalizer: pure function, (value, confidence, method) contract</span>
+<span class="kw">def</span> <span class="fn">normalize_phone</span>(raw: Optional[str]) → NormResult:
+    <span class="kw">if</span> _NON_PHONE_PATTERNS.search(raw):
+        <span class="kw">return</span> (None, <span class="num">0.0</span>, <span class="str">"invalid_input"</span>)  <span class="cm"># "Call after 5 PM"</span>
+    cleaned = _DIGIT_RE.sub(<span class="str">""</span>, raw)
+    <span class="kw">if</span> raw.strip().startswith(<span class="str">"+"</span>) <span class="kw">and</span> <span class="num">7</span> &lt;= len(cleaned) &lt;= <span class="num">15</span>:
+        <span class="kw">return</span> (<span class="str">"+"</span> + cleaned, <span class="num">1.0</span>, <span class="str">"direct_map"</span>)
+    <span class="kw">if</span> <span class="num">7</span> &lt;= len(cleaned) &lt;= <span class="num">15</span>:
+        <span class="kw">return</span> (<span class="str">"+"</span> + cleaned, <span class="num">0.85</span>, <span class="str">"normalised"</span>)
+    <span class="kw">return</span> (None, <span class="num">0.0</span>, <span class="str">"invalid_input"</span>)
+          </div>
+        </div>
+
+        <!-- STAGE 3: IDENTITY -->
+        <div class="pipeline-panel" id="panel-2">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-identity">🔍</div>
+            <div class="stage-meta">
+              <h3>Stage 3 — Identity Resolution Broker</h3>
+              <p>Email-keyed in-memory registry. Resolution is exact and case-insensitive. Name discrepancies between sources are tolerated — the merge engine resolves them.</p>
+            </div>
+          </div>
+          <div class="stage-grid">
+            <div class="stage-card">
+              <h4>Resolution Strategy</h4>
+              <ul>
+                <li>Email match (case-insensitive) → same entity</li>
+                <li>No email match → new entity registered</li>
+                <li>Multiple emails → any match triggers merge</li>
+                <li>Empty emails → no resolution possible</li>
+              </ul>
+            </div>
+            <div class="stage-card">
+              <h4>Design Tradeoffs</h4>
+              <ul>
+                <li>Email-only resolution: simple, explainable</li>
+                <li>Name fuzzy-matching: deliberately excluded</li>
+                <li>Two sources, same email → one profile</li>
+                <li>Two sources, no email → two profiles</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+<span class="kw">def</span> <span class="fn">resolve</span>(self, partial: CanonicalProfile) → Optional[CanonicalProfile]:
+    <span class="kw">for</span> email <span class="kw">in</span> partial.emails:
+        existing_id = self._email_index.get(email.lower())
+        <span class="kw">if</span> existing_id:
+            <span class="kw">return</span> self._registry[existing_id]  <span class="cm"># merge into this</span>
+    <span class="kw">return</span> None  <span class="cm"># new entity</span>
+          </div>
+        </div>
+
+        <!-- STAGE 4: MERGE / SAM -->
+        <div class="pipeline-panel" id="panel-3">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-merge">⚖️</div>
+            <div class="stage-meta">
+              <h3>Stage 4 — Data Merge Engine (SAM)</h3>
+              <p>Source Authority Matrix assigns a static weight per (field × source). Higher score wins. Fully deterministic — no ML, no randomness.</p>
+            </div>
+          </div>
+          <table class="sam-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>ATS</th>
+                <th>GitHub</th>
+                <th>LinkedIn</th>
+                <th>Recruiter CSV</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>full_name</td><td><span class="score-pill score-high">0.90</span></td><td><span class="score-pill score-low">0.60</span></td><td><span class="score-pill score-high">0.85</span></td><td><span class="score-pill score-mid">0.70</span></td></tr>
+              <tr><td>emails</td><td><span class="score-pill score-high">1.00</span></td><td><span class="score-pill score-high">1.00</span></td><td><span class="score-pill score-high">1.00</span></td><td><span class="score-pill score-high">0.90</span></td></tr>
+              <tr><td>phones</td><td><span class="score-pill score-high">0.90</span></td><td><span class="score-pill score-low">0.10</span></td><td><span class="score-pill score-mid">0.70</span></td><td><span class="score-pill score-high">0.85</span></td></tr>
+              <tr><td>skills</td><td><span class="score-pill score-low">0.40</span></td><td><span class="score-pill score-high">0.90</span></td><td><span class="score-pill score-high">0.85</span></td><td><span class="score-pill score-mid">0.60</span></td></tr>
+              <tr><td>headline</td><td><span class="score-pill score-low">0.30</span></td><td><span class="score-pill score-mid">0.80</span></td><td><span class="score-pill score-high">0.95</span></td><td><span class="score-pill score-low">0.40</span></td></tr>
+              <tr><td>education</td><td><span class="score-pill score-mid">0.50</span></td><td><span class="score-pill score-low">0.30</span></td><td><span class="score-pill score-high">0.95</span></td><td><span class="score-pill score-mid">0.50</span></td></tr>
+              <tr><td>years_experience</td><td><span class="score-pill score-mid">0.70</span></td><td><span class="score-pill score-low">0.30</span></td><td><span class="score-pill score-mid">0.60</span></td><td><span class="score-pill score-high">0.90</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- STAGE 5: PROJECTION -->
+        <div class="pipeline-panel" id="panel-4">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-project">🎯</div>
+            <div class="stage-meta">
+              <h3>Stage 5 — Projection Layer</h3>
+              <p>The runtime config reshapes the canonical profile without any code changes. Supports field renaming, path traversal, and re-normalization hints.</p>
+            </div>
+          </div>
+          <div class="stage-grid">
+            <div class="stage-card">
+              <h4>Path Syntax Supported</h4>
+              <ul>
+                <li><code>"full_name"</code> → top-level key</li>
+                <li><code>"emails[0]"</code> → array index</li>
+                <li><code>"skills[].name"</code> → attribute extraction</li>
+                <li><code>"location.city"</code> → dot traversal</li>
+                <li><code>"links.github"</code> → nested object</li>
+              </ul>
+            </div>
+            <div class="stage-card">
+              <h4>Config Capabilities</h4>
+              <ul>
+                <li>Rename: <code>"from": "emails[0]"</code> → <code>path: "contact_email"</code></li>
+                <li>Normalize hint: <code>"normalize": "E164"</code></li>
+                <li>Type coercion: <code>string[] → string</code></li>
+                <li>Toggle confidence: <code>include_confidence</code></li>
+                <li>on_missing: null | omit | error</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+<span class="cm"># Custom config — zero code changes, different output shape</span>
+{
+  <span class="str">"fields"</span>: [
+    { <span class="str">"path"</span>: <span class="str">"name"</span>, <span class="str">"from"</span>: <span class="str">"full_name"</span>, <span class="str">"required"</span>: <span class="kw">true</span> },
+    { <span class="str">"path"</span>: <span class="str">"contact_email"</span>, <span class="str">"from"</span>: <span class="str">"emails[0]"</span> },
+    { <span class="str">"path"</span>: <span class="str">"tech_skills"</span>, <span class="str">"from"</span>: <span class="str">"skills[].name"</span>, <span class="str">"normalize"</span>: <span class="str">"canonical"</span> }
+  ],
+  <span class="str">"include_confidence"</span>: <span class="kw">false</span>,
+  <span class="str">"on_missing"</span>: <span class="str">"omit"</span>
+}
+          </div>
+        </div>
+
+        <!-- STAGE 6: VALIDATE -->
+        <div class="pipeline-panel" id="panel-5">
+          <div class="stage-header">
+            <div class="stage-icon stage-icon-validate">✅</div>
+            <div class="stage-meta">
+              <h3>Stage 6 — Validation & Output Broker</h3>
+              <p>Enforces the on_missing policy for required fields. Three behaviors — null, omit, or hard error — with distinct exit codes.</p>
+            </div>
+          </div>
+          <div class="stage-grid">
+            <div class="stage-card">
+              <h4>on_missing Policies</h4>
+              <ul>
+                <li><code>null</code> → emit key with JSON null value</li>
+                <li><code>omit</code> → drop key from output entirely</li>
+                <li><code>error</code> → raise MissingRequiredFieldError → exit 2</li>
+              </ul>
+            </div>
+            <div class="stage-card">
+              <h4>Exit Codes</h4>
+              <ul>
+                <li><code>0</code> — success (≥0 candidates)</li>
+                <li><code>1</code> — CLI argument error</li>
+                <li><code>2</code> — missing required field</li>
+                <li><code>3</code> — unexpected runtime error</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+<span class="cm"># Policy enforcement — clean separation from projection logic</span>
+<span class="kw">for</span> spec <span class="kw">in</span> config.fields:
+    value = projected.get(spec.path)
+    is_missing = value <span class="kw">is</span> None <span class="kw">or</span> value == [] <span class="kw">or</span> value == <span class="str">""</span>
+    <span class="kw">if</span> is_missing <span class="kw">and</span> spec.required:
+        <span class="kw">if</span> policy == OnMissingPolicy.ERROR:
+            <span class="kw">raise</span> MissingRequiredFieldError(spec.path)  <span class="cm"># exit 2</span>
+        <span class="kw">elif</span> policy == OnMissingPolicy.OMIT:
+            <span class="kw">continue</span>                                     <span class="cm"># drop key</span>
+        <span class="kw">else</span>:
+            result[spec.path] = None                     <span class="cm"># JSON null</span>
+          </div>
+        </div>
+
+      </div><!-- pipeline-content -->
+    </div><!-- pipeline-wrapper -->
+  </div>
+</section>
+
+<!-- ══ DATASET ════════════════════════════════════════ -->
+<section id="data-section" class="section section-alt">
+  <div class="container">
+    <p class="section-label">Phase 1 — Data</p>
+    <h2 class="section-title">The <span>Dataset</span></h2>
+    <p class="section-desc">Expanded from 1 candidate to 35+ diverse real-world profiles across 4 source types and 15+ countries.</p>
+
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="data-card-icon">🗂️</div>
+        <h3>ATS JSON</h3>
+        <p>15 candidates: international names with accents, all-caps, hyphenated. Edge cases: null string as name, empty email, prose phone, unknown country.</p>
+        <div class="meta">
+          <span class="badge badge-blue">15 records</span>
+          <span class="badge badge-gold">12 countries</span>
+          <span class="badge badge-red">5 edge cases</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">🐙</div>
+        <h3>GitHub JSON</h3>
+        <p>8 developer profiles: skill synonyms (golang, k8s, torch), relative date sentinels (Present/ongoing/current), null phone, ghost profile with no email.</p>
+        <div class="meta">
+          <span class="badge badge-green">8 profiles</span>
+          <span class="badge badge-blue">30+ skills</span>
+          <span class="badge badge-gold">Array format</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">💼</div>
+        <h3>LinkedIn JSON</h3>
+        <p>4 profiles with compound location strings, education records, ghost profile (empty handle URL), no-reply email rejection.</p>
+        <div class="meta">
+          <span class="badge badge-blue">4 profiles</span>
+          <span class="badge badge-red">Compound location</span>
+          <span class="badge badge-gold">Education data</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">📋</div>
+        <h3>Recruiter CSV</h3>
+        <p>12 rows: comma-delimited skills, blank rows (silently skipped), duplicate email (identity resolution test), missing phone, international candidates.</p>
+        <div class="meta">
+          <span class="badge badge-red">12 rows</span>
+          <span class="badge badge-green">years_exp field</span>
+          <span class="badge badge-gold">BOM-safe reader</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BEFORE / AFTER -->
+    <h3 class="before-after-heading">Before & After: Data Transformation</h3>
+    <p class="before-after-intro">Raw → single canonical profile (1 ATS + 1 GitHub with matching email)</p>
+
+    <div class="before-after">
+      <div class="ba-panel ba-before">
+        <div class="ba-header">❌ Raw Inputs (2 sources, conflicting)</div>
+        <div class="ba-body ba-body-before">
+ATS:    name: "KRISHNA BHAT"<br>
+        email: "krishna@example.com"<br>
+        phone: "+91 98765-43210"<br>
+        org: "TechCorp"<br>
+        country: "India"<br>
+<br>
+GitHub: login: "krishnabhat"<br>
+        name: "Krishna B. Bhat"<br>
+        email: "krishna@example.com"<br>
+        phone: "Call after 5 PM" ← prose<br>
+        skills: ["python","Python3","Go","sql"]<br>
+        end: "Present" ← relative sentinel
+        </div>
+      </div>
+
+      <div class="ba-divider">→</div>
+
+      <div class="ba-panel ba-after">
+        <div class="ba-header">✅ Canonical Output (merged, normalized)</div>
+        <div class="ba-body ba-body-after">
+{<br>
+&nbsp;"full_name": "Krishna Bhat",<br>
+&nbsp;"primary_email": "krishna@example.com",<br>
+&nbsp;"phone": "+919876543210",<br>
+&nbsp;"skills": ["Python","Go","SQL"],<br>
+&nbsp;"location": {"city":null,"country":"IN"},<br>
+&nbsp;"links": {"github":"https://github.com/krishnabhat"},<br>
+&nbsp;"experience": [{"company":"TechCorp",<br>
+&nbsp;&nbsp;"title":"Software Engineer",<br>
+&nbsp;&nbsp;"end":"2026-06"}],<br>
+&nbsp;"provenance": [<br>
+&nbsp;&nbsp;{"field":"skills","source":"github","method":"taxonomy_normalised"},<br>
+&nbsp;&nbsp;{"field":"experience[].end","source":"github","method":"relative_sentinel"}<br>
+&nbsp;]<br>
+}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ EDGE CASES ═════════════════════════════════════ -->
+<section id="edge-cases" class="section">
+  <div class="container">
+    <p class="section-label">Phase 1 — Resilience</p>
+    <h2 class="section-title">Edge Cases <span>Handled</span></h2>
+    <p class="section-desc">Every failure mode is caught, logged, and turned into an honest null — never a wrong value.</p>
+
+    <div class="edge-grid">
+      <div class="edge-card type-phone">
+        <div class="edge-title">📞 Prose Phone Number</div>
+        <div class="edge-label">Input (GitHub bio):</div>
+        <div class="edge-input">"Call after 5 PM"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">phones: []  |  method: "invalid_input"</div>
+        <div class="edge-explain">Regex detects prose keywords (call, text, pm, am, email) before attempting digit extraction. Logged but never crashes.</div>
+      </div>
+
+      <div class="edge-card type-name">
+        <div class="edge-title">👤 Null Sentinel String as Name</div>
+        <div class="edge-label">Input (ATS row):</div>
+        <div class="edge-input">name: "null"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">full_name: null  |  method: "null_sentinel_rejected"</div>
+        <div class="edge-explain">Upstream ATS systems sometimes export the literal string "null". A regex catches null, none, n/a, -, undefined before they pollute the profile.</div>
+      </div>
+
+      <div class="edge-card type-name">
+        <div class="edge-title">🔠 All-Caps Name</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">"SARAH JANE O'CONNOR"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">"Sarah Jane O'Connor"  |  conf: 0.9</div>
+        <div class="edge-explain">All-caps detection + title-casing. Confidence is 0.9 (not 1.0) to flag that the transformation was heuristic — the original casing might have been intentional.</div>
+      </div>
+
+      <div class="edge-card type-email">
+        <div class="edge-title">📧 Malformed Email (Double @@)</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">"fatima@@bademail..com"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">emails: []  |  method: "invalid_input"</div>
+        <div class="edge-explain">RFC-compliant regex validation. No SMTP verification — purely syntactic. Invalid emails never enter the identity index.</div>
+      </div>
+
+      <div class="edge-card type-email">
+        <div class="edge-title">🤖 System / No-Reply Email</div>
+        <div class="edge-label">Input (ghost LinkedIn profile):</div>
+        <div class="edge-input">"no-reply@linkedin.com"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">emails: []  |  method: "system_email_rejected"</div>
+        <div class="edge-explain">Explicitly detected and rejected. Using a system email for identity resolution would incorrectly merge unrelated candidates.</div>
+      </div>
+
+      <div class="edge-card type-date">
+        <div class="edge-title">📅 Relative Date Sentinel</div>
+        <div class="edge-label">Input variations:</div>
+        <div class="edge-input">"Present" / "current" / "ongoing" / "now"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">"2026-06"  |  method: "relative_sentinel"</div>
+        <div class="edge-explain">Mapped to a fixed epoch (PRESENT_EPOCH = "2026-06"). Provenance method "relative_sentinel" distinguishes this from a real date value downstream.</div>
+      </div>
+
+      <div class="edge-card type-date">
+        <div class="edge-title">📅 Year-Only Date</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">"2019"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">"2019-01"  |  conf: 0.5  |  "year_only_approx"</div>
+        <div class="edge-explain">Approximated to January of that year. Low confidence (0.5) signals that the month is a guess. Downstream systems can filter on confidence if precision matters.</div>
+      </div>
+
+      <div class="edge-card type-merge">
+        <div class="edge-title">🔀 Duplicate Email → One Profile</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">ATS: krishna@ex.com | GitHub: krishna@ex.com | CSV: krishna@ex.com</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">1 canonical profile | 3 provenance sources</div>
+        <div class="edge-explain">Identity broker uses normalized (lowercase) email as the merge key. All three sources are merged into one profile. Provenance records from all three are retained.</div>
+      </div>
+
+      <div class="edge-card type-source">
+        <div class="edge-title">💥 Malformed Source File</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">github_source.json: "{broken json"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">Source skipped. Other sources unaffected.</div>
+        <div class="edge-explain">InvalidSourceFormatError is caught at the ingestion dispatcher level. The rest of the pipeline continues with other sources. Exit code remains 0.</div>
+      </div>
+
+      <div class="edge-card type-source">
+        <div class="edge-title">🌍 Non-Standard Country Name</div>
+        <div class="edge-label">Input:</div>
+        <div class="edge-input">"japan" (lowercase), "UK", "brasil", "UAE"</div>
+        <div class="edge-label">Output:</div>
+        <div class="edge-output">"JP" / "GB" / "BR" / "AE"</div>
+        <div class="edge-explain">70-country lookup table handles case variants, aliases, alternate spellings (brasil, czechia, holland). Last resort: partial/word-level fuzzy match at confidence 0.6.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ IMPACT / METRICS ══════════════════════════════ -->
+<section id="impact" class="section section-alt">
+  <div class="container">
+    <p class="section-label">Phase 3 — Results</p>
+    <h2 class="section-title">Scale & <span>Impact</span></h2>
+    <p class="section-desc">From a 1-candidate proof-of-concept to a production-ready, multi-source pipeline with comprehensive test coverage.</p>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-num">35×</div>
+        <div class="metric-label">Dataset Growth</div>
+        <div class="metric-sub">1 → 35+ test candidates</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">4</div>
+        <div class="metric-label">Source Types</div>
+        <div class="metric-sub">ATS, GitHub, LinkedIn, CSV</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">80+</div>
+        <div class="metric-label">Skill Entries</div>
+        <div class="metric-sub">In taxonomy (LLMs, mobile, data eng)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">70+</div>
+        <div class="metric-label">Countries</div>
+        <div class="metric-sub">In ISO-3166 lookup table</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">80+</div>
+        <div class="metric-label">Tests Written</div>
+        <div class="metric-sub">Unit + integration</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">100%</div>
+        <div class="metric-label">Deterministic</div>
+        <div class="metric-sub">Same input → same output, always</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">0</div>
+        <div class="metric-label">Invented Values</div>
+        <div class="metric-sub">Absent data stays null, never guessed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">O(n)</div>
+        <div class="metric-label">Memory Model</div>
+        <div class="metric-sub">Generator-based, not O(sources × n)</div>
+      </div>
+    </div>
+
+    <!-- Engineering Principles -->
+    <div class="engineering-principles">
+      <h3 class="engineering-principles-title">Key Engineering Principles</h3>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="data-card-icon">🎯</div>
+          <h3>Deterministic</h3>
+          <p>Same inputs always produce the same output. No randomness, no ML inference in the critical path. Essential for auditing hiring decisions.</p>
+        </div>
+        <div class="data-card">
+          <div class="data-card-icon">🔍</div>
+          <h3>Explainable</h3>
+          <p>Every field in the output carries a provenance record: which source it came from, and exactly how it was derived (method). Nothing is opaque.</p>
+        </div>
+        <div class="data-card">
+          <div class="data-card-icon">🛡️</div>
+          <h3>Robust</h3>
+          <p>A missing or garbage source never crashes the run. Unknown values become null, never invented. Wrong-but-confident is worse than honestly empty.</p>
+        </div>
+        <div class="data-card">
+          <div class="data-card-icon">📈</div>
+          <h3>Scalable</h3>
+          <p>Generator-based ingestion means no source file is held open during processing. Reasonable on thousands of candidates with constant memory overhead.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ VIDEO SCRIPT ═══════════════════════════════════ -->
+<section id="video-script" class="section">
+  <div class="container">
+    <p class="section-label">Phase 4 — Demo</p>
+    <h2 class="section-title">Video <span>Presentation Script</span></h2>
+    <p class="section-desc">3–5 minute demo storyboard with screen flows and talking points. Structured for maximum clarity and engineering depth.</p>
+
+    <div class="script-timeline">
+
+      <div class="script-item">
+        <div class="script-time">0:00 – 0:30 · Hook & Problem</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Show the terminal. Run: <code>cat data/ats_source.json</code> and <code>cat data/github_source.json</code> side by side. The fields don't match, the phone is garbled, the email exists in both.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"Eightfold ingests candidates from everywhere — ATS, GitHub, LinkedIn, recruiter sheets. Each source uses different field names. The same candidate appears multiple times with conflicting values. A bad value that looks correct is worse than an honest null. My job was to build the transformer that turns this mess into one trustworthy record."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">0:30 – 1:30 · Architecture Walkthrough</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Open <code>data/architecture.drawio</code> in draw.io (or share screen). Walk through the 6-stage flow diagram. Pause on the Source Authority Matrix box.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"The pipeline has six stages: Ingest, Normalize, Identity Resolve, Merge, Project, Validate. Each stage is decoupled — normalizers are pure functions with no side effects. The key design decision was the Source Authority Matrix: a static weight table that says 'LinkedIn wins on headline, ATS wins on phone, GitHub wins on skills.' No ML, no randomness. Same input, same output, always. That matters for hiring decisions."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">1:30 – 2:30 · Live Pipeline Demo</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Run the full pipeline: <code>python main.py --source ats:data/ats_source.json --source github:data/github_source.json --source linkedin:data/linkedin_source.json --source recruiter_csv:data/recruiter_source.csv --config data/runtime_config.json --pretty</code>. Scroll through the output, point to provenance records.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"Now I'll run all four sources together. Watch how Krishna Bhat's profile from the ATS and GitHub — both with the same email — get merged into one canonical record. Notice the provenance array: it records that the phone came from ATS with method 'direct_map', and the skills came from GitHub with method 'taxonomy_normalised'. Nothing is hidden."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">2:30 – 3:30 · Edge Cases & Resilience</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Run with <code>--log-level DEBUG</code>. Point to the log line: "GitHub phone 'Call after 5 PM' is not a valid phone number; skipping." Then show candidate ats_111 (Fatima, bad email + 3-digit phone) in the output — both fields are null, not crashed.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"Here's the edge case I'm most proud of. The GitHub bio says 'Call after 5 PM' as a phone number. Instead of crashing or storing that string, the normalizer detects the prose keywords, logs a warning, and sets the field to null with method 'invalid_input'. Fatima's record has a double-at email and a 3-digit phone — both are null in the output. The pipeline never invented a value."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">3:30 – 4:00 · Custom Config Demo</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Run: <code>python main.py --source ats:data/ats_source.json --source github:data/github_source.json --config data/custom_config.json --pretty</code>. Compare the output keys (contact_email, tech_skills, years_exp) against the default config.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"The projection layer separates the internal model from the output shape. With this custom config, 'emails[0]' is renamed to 'contact_email', missing fields are omitted rather than null, and confidence scores are stripped. Zero code changes — just a different JSON file. This is the configurable output twist from the assignment."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">4:00 – 4:30 · Test Suite</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Run: <code>pytest tests/ -v</code>. Show green checkmarks. Point to specific test names: test_prose_phone_rejected, test_null_sentinel_name_rejected, test_duplicate_emails_merged_into_one_candidate.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"Every edge case I just showed has a corresponding test. 80-plus assertions across normalizer unit tests and full pipeline integration tests. The key tests are the identity resolution ones — same email across three sources must produce exactly one canonical profile, never three."</p>
+        </div>
+      </div>
+
+      <div class="script-item">
+        <div class="script-time">4:30 – 5:00 · Tradeoffs & What I'd Leave Out</div>
+        <div class="script-screen">
+          <h4>📺 On Screen</h4>
+          <p>Return to the architecture diagram. Optionally show a brief README excerpt.</p>
+        </div>
+        <div class="script-talk">
+          <h4>🎙️ Talking Points</h4>
+          <p>"Under time pressure, I'd leave out: LinkedIn and CSV adapters (ATS + GitHub covers the requirement), fuzzy name matching for identity resolution (too many false positives), and the portfolio HTML. What I'd always keep: the provenance system, the on_missing policy, and the SAM — those are the core of what makes this trustworthy rather than just functional. Thank you."</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <p class="footer-name">Deepti Bhat</p>
+    <p><a href="mailto:deeptibt08@gmail.com">deeptibt08@gmail.com</a> · <a href="https://github.com/deeptibt08" target="_blank" rel="noopener noreferrer">GitHub</a> · <a href="https://linkedin.com/in/deepti-bhat-eng" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+    <p class="footer-meta">Eightfold Engineering Intern Assignment · Multi-Source Candidate Data Transformer</p>
+  </div>
+</footer>
+
+<script>
+  // ── PIPELINE TAB SWITCHER ─────────────────────────────
+  function switchTab(idx) {
+    document.querySelectorAll('.pipeline-tab').forEach((t, i) => {
+      t.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.pipeline-panel').forEach((p, i) => {
+      p.classList.toggle('active', i === idx);
+    });
+  }
+
+  // ── NAVBAR SCROLL EFFECT ──────────────────────────────
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.style.background = window.scrollY > 60
+      ? 'rgba(10,10,15,0.97)'
+      : 'rgba(10,10,15,0.85)';
+  });
+
+  // ── INTERSECTION OBSERVER (fade-up on scroll) ─────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.data-card, .edge-card, .metric-card, .tl-item, .script-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    observer.observe(el);
+  });
+
+  // ── COUNTER ANIMATION ─────────────────────────────────
+  function animateCounter(el, target, suffix = '') {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      el.textContent = Math.floor(start) + suffix;
+      if (start >= target) clearInterval(timer);
+    }, 16);
+  }
+
+  const heroObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      animateCounter(document.getElementById('cnt-candidates'), 35, '+');
+      heroObserver.disconnect();
+    }
+  }, { threshold: 0.5 });
+  heroObserver.observe(document.getElementById('cnt-candidates'));
+</script>
+</body>
+</html>

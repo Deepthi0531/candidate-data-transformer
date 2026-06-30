@@ -1,0 +1,13 @@
+candidate_id,name,email_address,phone_raw,organization,role_title,country_name,city_name,years_experience,skills_raw
+rec_201,Arjun Sharma,arjun.sharma@recruiter.in,+91 99887 76655,Wipro,Software Developer,India,Pune,4,"java,spring boot,microservices,sql"
+rec_202,Emily Chen,emily.chen@company.ca,+1 604 555 0198,Vancouver Tech,Frontend Developer,Canada,Vancouver,3,"react,typescript,css,graphql"
+rec_203,Mateus Oliveira,mateus@startup.br,+55 11 99876 5432,São Paulo Labs,Data Analyst,Brazil,São Paulo,2,"python,pandas,sql,tableau,powerbi"
+rec_204,Nadia Kovač,nadia.kovac@agency.hr,+385 91 234 5678,Zagreb Agency,UX Engineer,Croatia,Zagreb,5,"javascript,react,figma,css"
+rec_205,Abebe Girma,abebe@addis.et,,Addis AI,ML Researcher,Ethiopia,Addis Ababa,3,"python,tensorflow,research,nlp"
+rec_206,Tanvir Ahmed,tanvir.ahmed@dhaka.bd,+880 1812 345678,Dhaka Dev Co,Full Stack,Bangladesh,Dhaka,2,"nodejs,react,mongodb,docker"
+rec_207,Ingrid Larsson,ingrid.larsson@nordic.se,+46 70 123 4567,Nordic Systems,Cloud Architect,Sweden,Stockholm,10,"aws,azure,kubernetes,terraform,python"
+rec_208,,,invalid-phone,,,,0,
+rec_209,Test Candidate,duplicate@example.com,+1 800 000 0000,Duplicate Corp,Tester,US,New York,0,
+rec_210,Duplicate Person,duplicate@example.com,+1 800 000 0000,Same Corp,Tester II,United States,New York,1,"selenium,pytest"
+rec_211,Ravi Shankar Prasad,ravi.shankar@bigtechco.in,+91-80-2345-6789,BigTech India,Principal Engineer,India,Hyderabad,12,"java,scala,kafka,spark,aws,python"
+rec_212,Hana Nakamura,hana.nakamura@corp.jp,+81 90 2345 6789,Osaka Digital,Mobile Engineer,japan,Osaka,6,"swift,kotlin,react native,firebase"
