@@ -450,7 +450,6 @@
     <li><a href="#data-section">Dataset</a></li>
     <li><a href="#edge-cases">Edge Cases</a></li>
     <li><a href="#impact">Impact</a></li>
-    <li><a href="#video-script">Demo Script</a></li>
   </ul>
 </nav>
 
@@ -1180,103 +1179,6 @@ GitHub: login: "krishnabhat"<br>
           <p>Generator-based ingestion means no source file is held open during processing. Reasonable on thousands of candidates with constant memory overhead.</p>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ VIDEO SCRIPT ═══════════════════════════════════ -->
-<section id="video-script" class="section">
-  <div class="container">
-    <p class="section-label">Phase 4 — Demo</p>
-    <h2 class="section-title">Video <span>Presentation Script</span></h2>
-    <p class="section-desc">3–5 minute demo storyboard with screen flows and talking points. Structured for maximum clarity and engineering depth.</p>
-
-    <div class="script-timeline">
-
-      <div class="script-item">
-        <div class="script-time">0:00 – 0:30 · Hook & Problem</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Show the terminal. Run: <code>cat data/ats_source.json</code> and <code>cat data/github_source.json</code> side by side. The fields don't match, the phone is garbled, the email exists in both.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"Eightfold ingests candidates from everywhere — ATS, GitHub, LinkedIn, recruiter sheets. Each source uses different field names. The same candidate appears multiple times with conflicting values. A bad value that looks correct is worse than an honest null. My job was to build the transformer that turns this mess into one trustworthy record."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">0:30 – 1:30 · Architecture Walkthrough</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Open <code>data/architecture.drawio</code> in draw.io (or share screen). Walk through the 6-stage flow diagram. Pause on the Source Authority Matrix box.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"The pipeline has six stages: Ingest, Normalize, Identity Resolve, Merge, Project, Validate. Each stage is decoupled — normalizers are pure functions with no side effects. The key design decision was the Source Authority Matrix: a static weight table that says 'LinkedIn wins on headline, ATS wins on phone, GitHub wins on skills.' No ML, no randomness. Same input, same output, always. That matters for hiring decisions."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">1:30 – 2:30 · Live Pipeline Demo</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Run the full pipeline: <code>python main.py --source ats:data/ats_source.json --source github:data/github_source.json --source linkedin:data/linkedin_source.json --source recruiter_csv:data/recruiter_source.csv --config data/runtime_config.json --pretty</code>. Scroll through the output, point to provenance records.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"Now I'll run all four sources together. Watch how Krishna Bhat's profile from the ATS and GitHub — both with the same email — get merged into one canonical record. Notice the provenance array: it records that the phone came from ATS with method 'direct_map', and the skills came from GitHub with method 'taxonomy_normalised'. Nothing is hidden."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">2:30 – 3:30 · Edge Cases & Resilience</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Run with <code>--log-level DEBUG</code>. Point to the log line: "GitHub phone 'Call after 5 PM' is not a valid phone number; skipping." Then show candidate ats_111 (Fatima, bad email + 3-digit phone) in the output — both fields are null, not crashed.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"Here's the edge case I'm most proud of. The GitHub bio says 'Call after 5 PM' as a phone number. Instead of crashing or storing that string, the normalizer detects the prose keywords, logs a warning, and sets the field to null with method 'invalid_input'. Fatima's record has a double-at email and a 3-digit phone — both are null in the output. The pipeline never invented a value."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">3:30 – 4:00 · Custom Config Demo</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Run: <code>python main.py --source ats:data/ats_source.json --source github:data/github_source.json --config data/custom_config.json --pretty</code>. Compare the output keys (contact_email, tech_skills, years_exp) against the default config.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"The projection layer separates the internal model from the output shape. With this custom config, 'emails[0]' is renamed to 'contact_email', missing fields are omitted rather than null, and confidence scores are stripped. Zero code changes — just a different JSON file. This is the configurable output twist from the assignment."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">4:00 – 4:30 · Test Suite</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Run: <code>pytest tests/ -v</code>. Show green checkmarks. Point to specific test names: test_prose_phone_rejected, test_null_sentinel_name_rejected, test_duplicate_emails_merged_into_one_candidate.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"Every edge case I just showed has a corresponding test. 80-plus assertions across normalizer unit tests and full pipeline integration tests. The key tests are the identity resolution ones — same email across three sources must produce exactly one canonical profile, never three."</p>
-        </div>
-      </div>
-
-      <div class="script-item">
-        <div class="script-time">4:30 – 5:00 · Tradeoffs & What I'd Leave Out</div>
-        <div class="script-screen">
-          <h4>📺 On Screen</h4>
-          <p>Return to the architecture diagram. Optionally show a brief README excerpt.</p>
-        </div>
-        <div class="script-talk">
-          <h4>🎙️ Talking Points</h4>
-          <p>"Under time pressure, I'd leave out: LinkedIn and CSV adapters (ATS + GitHub covers the requirement), fuzzy name matching for identity resolution (too many false positives), and the portfolio HTML. What I'd always keep: the provenance system, the on_missing policy, and the SAM — those are the core of what makes this trustworthy rather than just functional. Thank you."</p>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
