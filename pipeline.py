@@ -1,6 +1,5 @@
 """
 pipeline.py
-===========
 Core ingestion, identity resolution, conflict merging, and projection engine
 for the Multi-Source Candidate Data Transformer.
 
@@ -23,10 +22,7 @@ Design rules:
 from __future__ import annotations
 
 import csv
-<<<<<<< HEAD
 import io
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 import json
 import logging
 import re
@@ -49,7 +45,6 @@ from models import (
 from normalizers import (
     canonicalize_skill,
     deduplicate_skills,
-<<<<<<< HEAD
     normalize_city_from_compound,
     normalize_country,
     normalize_date,
@@ -59,14 +54,6 @@ from normalizers import (
     normalize_phone,
     normalize_string,
     normalize_years_experience,
-=======
-    normalize_country,
-    normalize_date,
-    normalize_email,
-    normalize_name,
-    normalize_phone,
-    normalize_string,
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 )
 
 logger = logging.getLogger(__name__)
@@ -113,12 +100,9 @@ def ingest_ats_source(path: Path) -> Generator[Dict[str, Any], None, None]:
 
     Expected format: a JSON array of candidate objects.
     Yields one raw dict per candidate, tagged with ``_source_label``.
-<<<<<<< HEAD
 
     Memory model: the file is read once; each record is yielded individually
     so downstream stages process one candidate at a time.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     raw = _load_json(path)
     if not isinstance(raw, list):
@@ -137,7 +121,6 @@ def ingest_github_source(path: Path) -> Generator[Dict[str, Any], None, None]:
     """
     Ingestion adapter for GitHub profile JSON files.
 
-<<<<<<< HEAD
     Expected format: either a single JSON object OR a JSON array of profile objects.
     Yields one raw dict per profile, tagged with ``_source_label``.
     """
@@ -205,51 +188,12 @@ def ingest_recruiter_csv_source(path: Path) -> Generator[Dict[str, Any], None, N
             continue
         row["_source_label"] = "recruiter_csv"
         yield dict(row)
-=======
-    Expected format: a single JSON object (one profile per file).
-    Yields a single raw dict tagged with ``_source_label``.
-    """
-    raw = _load_json(path)
-    if not isinstance(raw, dict):
-        raise InvalidSourceFormatError(
-            f"GitHub source '{path}' must be a JSON object; got {type(raw).__name__}."
-        )
-    raw["_source_label"] = "github"
-    yield raw
-
-
-def ingest_csv_source(path: Path) -> Generator[Dict[str, Any], None, None]:
-    """
-    Ingestion adapter for Recruiter CSV export data.
-    
-    Expected headers: name, email, phone, current_company, title, skills
-    Yields rows as dictionaries on-the-fly to remain memory-efficient.
-    """
-    if not path.exists():
-        raise InvalidSourceFormatError(f"CSV source path does not exist: '{path}'")
-        
-    try:
-        with open(path, mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            if not reader.fieldnames:
-                raise InvalidSourceFormatError(f"CSV file '{path}' contains no headers.")
-                
-            for row in reader:
-                if not any(row.values()):
-                    continue
-                record = dict(row)
-                record["_source_label"] = "recruiter_csv"
-                yield record
-    except Exception as exc:
-        raise InvalidSourceFormatError(f"CSV parse error in '{path}': {exc}") from exc
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 
 
 def ingest_sources(
     source_paths: List[Tuple[str, Path]],
 ) -> Generator[Dict[str, Any], None, None]:
     """
-<<<<<<< HEAD
     Unified ingestion entry-point.  Dispatches each path to the correct
     source-specific adapter based on the source type label.
 
@@ -262,20 +206,12 @@ def ingest_sources(
     Yields
     ------
     Raw record dicts, each annotated with ``_source_label``.
-=======
-    Unified ingestion entry-point. Dispatches each path to the correct
-    source-specific adapter based on the source type label.
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     _adapters = {
         "ats": ingest_ats_source,
         "github": ingest_github_source,
-<<<<<<< HEAD
         "linkedin": ingest_linkedin_source,
         "recruiter_csv": ingest_recruiter_csv_source,
-=======
-        "recruiter_csv": ingest_csv_source,
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     }
     for source_type, path in source_paths:
         adapter = _adapters.get(source_type)
@@ -293,12 +229,9 @@ def ingest_sources(
 # ============================================================================
 # Stage 2 — Normalization / Standardization Layer
 # ============================================================================
-<<<<<<< HEAD
 # Each adapter below takes a raw source dict and returns a partially-filled
 # CanonicalProfile together with a list of provenance records.  This keeps
 # normalization logic decoupled from both ingestion and merging.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 
 
 def _safe_normalize(
@@ -306,13 +239,10 @@ def _safe_normalize(
 ):
     """
     Wrap any normalizer call in a defensive try/except.
-<<<<<<< HEAD
 
     Returns the (value, confidence, method) triple from the normalizer, but
     falls back to (None, 0.0, 'invalid_input') and logs a warning if the
     normalizer itself raises an unexpected exception.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     try:
         return fn(raw_value)
@@ -329,13 +259,10 @@ def _safe_normalize(
 def normalize_ats_record(raw: Dict[str, Any]) -> CanonicalProfile:
     """
     Normalize a raw ATS record into a partial CanonicalProfile.
-<<<<<<< HEAD
 
     ATS fields handled:
       candidate_id, name, email_address, phone_raw,
       organization + role_title (→ experience), country_name, city_name.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     source = "ats"
     cid = raw.get("candidate_id", f"ats_{id(raw)}")
@@ -380,11 +307,7 @@ def normalize_ats_record(raw: Dict[str, Any]) -> CanonicalProfile:
     if city_val:
         profile.add_provenance("location.city", source, city_method)
 
-<<<<<<< HEAD
     # --- experience (from org + role) ---
-=======
-    # --- experience ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     org, _, _ = _safe_normalize(
         normalize_string,
         raw.get("organization"),
@@ -405,13 +328,10 @@ def normalize_ats_record(raw: Dict[str, Any]) -> CanonicalProfile:
 def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
     """
     Normalize a raw GitHub profile record into a partial CanonicalProfile.
-<<<<<<< HEAD
 
     GitHub fields handled:
       login (→ links.github), name, email, phone (defensive), bio (→ headline),
       skills_extracted (→ skills), history (→ experience).
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     source = "github"
     login = raw.get("login", "github_unknown")
@@ -432,11 +352,7 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
         profile.emails = [email_val]
         profile.add_provenance("emails", source, method)
 
-<<<<<<< HEAD
     # --- phone (defensive — GitHub bio may have prose text) ---
-=======
-    # --- phone ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     phone_val, phone_conf, method = _safe_normalize(
         normalize_phone, raw.get("phone"), "phones", source, profile
     )
@@ -444,10 +360,7 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
         profile.phones = [phone_val]
         profile.add_provenance("phones", source, method)
     else:
-<<<<<<< HEAD
         # Log the bad value but do NOT crash — just omit and flag.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         bad_phone = raw.get("phone")
         if bad_phone:
             logger.info(
@@ -484,11 +397,7 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
     if profile.skills:
         profile.add_provenance("skills", source, "taxonomy_normalised")
 
-<<<<<<< HEAD
     # --- experience (from history) ---
-=======
-    # --- experience ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     history: List[Dict[str, Any]] = raw.get("history", [])
     entries: List[ExperienceEntry] = []
     for job in history:
@@ -516,10 +425,7 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
                 end=end_val,
             )
         )
-<<<<<<< HEAD
         # Tag relative sentinel dates in provenance.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         if start_method == "relative_sentinel":
             profile.add_provenance("experience[].start", source, "relative_sentinel")
         if end_method == "relative_sentinel":
@@ -531,7 +437,6 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
     return profile
 
 
-<<<<<<< HEAD
 def normalize_linkedin_record(raw: Dict[str, Any]) -> CanonicalProfile:
     """
     Normalize a raw LinkedIn profile record into a partial CanonicalProfile.
@@ -548,20 +453,6 @@ def normalize_linkedin_record(raw: Dict[str, Any]) -> CanonicalProfile:
     # --- full_name ---
     name_val, _, method = _safe_normalize(
         normalize_name, raw.get("full_name"), "full_name", source, profile
-=======
-def normalize_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
-    """
-    Normalize a raw Recruiter CSV record into a partial CanonicalProfile.
-    """
-    source = "recruiter_csv"
-    email_hint = raw.get("email", "")
-    cid = f"csv_{hash(email_hint) & 0xfffffff}"
-    profile = CanonicalProfile(candidate_id=cid)
-
-    # --- full_name ---
-    name_val, _, method = _safe_normalize(
-        normalize_name, raw.get("name"), "full_name", source, profile
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     )
     profile.full_name = name_val
     profile.add_provenance("full_name", source, method)
@@ -574,7 +465,6 @@ def normalize_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
         profile.emails = [email_val]
         profile.add_provenance("emails", source, method)
 
-<<<<<<< HEAD
     # --- linkedin link ---
     if url_val:
         profile.links = Links(linkedin=url_val)
@@ -710,17 +600,11 @@ def normalize_recruiter_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
     # --- phone ---
     phone_val, _, method = _safe_normalize(
         normalize_phone, raw.get("phone_raw"), "phones", source, profile
-=======
-    # --- phone ---
-    phone_val, _, method = _safe_normalize(
-        normalize_phone, raw.get("phone"), "phones", source, profile
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     )
     if phone_val:
         profile.phones = [phone_val]
         profile.add_provenance("phones", source, method)
 
-<<<<<<< HEAD
     # --- location ---
     country_val, _, c_method = _safe_normalize(
         normalize_country, raw.get("country_name"), "location.country", source, profile
@@ -771,32 +655,6 @@ def normalize_recruiter_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
     ]
     if profile.skills:
         profile.add_provenance("skills", source, "taxonomy_normalised")
-=======
-    # --- experience ---
-    company, _, _ = _safe_normalize(normalize_string, raw.get("current_company"), "experience[].company", source, profile)
-    title, _, _ = _safe_normalize(normalize_string, raw.get("title"), "experience[].title", source, profile)
-    if company or title:
-        profile.experience = [ExperienceEntry(company=company, title=title)]
-        profile.add_provenance("experience", source, "direct_map")
-
-    # --- skills ---
-    raw_skills_str = raw.get("skills", "")
-    if raw_skills_str:
-        raw_skills = [s.strip() for s in raw_skills_str.split(",") if s.strip()]
-        skill_tuples: List[Tuple[str, float, List[str]]] = []
-        for s in raw_skills:
-            canonical, conf, method = _safe_normalize(
-                canonicalize_skill, s, "skills", source, profile
-            )
-            if canonical:
-                skill_tuples.append((canonical, conf, [source]))
-        deduped = deduplicate_skills(skill_tuples)
-        profile.skills = [
-            Skill(name=n, confidence=c, sources=srcs) for n, c, srcs in deduped
-        ]
-        if profile.skills:
-            profile.add_provenance("skills", source, "taxonomy_normalised")
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 
     return profile
 
@@ -804,26 +662,18 @@ def normalize_recruiter_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
 def normalize_record(raw: Dict[str, Any]) -> CanonicalProfile:
     """
     Dispatch a raw record to the correct normalizer based on its ``_source_label``.
-<<<<<<< HEAD
 
     Returns a partially-populated CanonicalProfile.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     """
     label = raw.get("_source_label", "")
     if label == "ats":
         return normalize_ats_record(raw)
     if label == "github":
         return normalize_github_record(raw)
-<<<<<<< HEAD
     if label == "linkedin":
         return normalize_linkedin_record(raw)
     if label == "recruiter_csv":
         return normalize_recruiter_csv_record(raw)
-=======
-    if label == "recruiter_csv":
-        return normalize_csv_record(raw)
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     raise ValueError(f"Unknown source label: '{label}'")
 
 
@@ -836,7 +686,6 @@ class IdentityBroker:
     """
     Maintains an in-memory registry of known candidate profiles, keyed by
     normalised email address.
-<<<<<<< HEAD
 
     Resolution strategy (in priority order):
       1. Exact normalised-email match → same entity.
@@ -858,15 +707,6 @@ class IdentityBroker:
 
         Returns the existing CanonicalProfile if found, else None.
         """
-=======
-    """
-
-    def __init__(self) -> None:
-        self._email_index: Dict[str, str] = {}
-        self._registry: Dict[str, CanonicalProfile] = {}
-
-    def resolve(self, partial: CanonicalProfile) -> Optional[CanonicalProfile]:
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         for email in partial.emails:
             existing_id = self._email_index.get(email.lower())
             if existing_id:
@@ -879,27 +719,18 @@ class IdentityBroker:
         return None
 
     def register(self, profile: CanonicalProfile) -> None:
-<<<<<<< HEAD
         """Add a new canonical profile to the registry."""
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         self._registry[profile.candidate_id] = profile
         for email in profile.emails:
             self._email_index[email.lower()] = profile.candidate_id
 
     def update_email_index(self, profile: CanonicalProfile) -> None:
-<<<<<<< HEAD
         """Re-index a profile's emails after a merge (emails may have been added)."""
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         for email in profile.emails:
             self._email_index[email.lower()] = profile.candidate_id
 
     def all_profiles(self) -> Generator[CanonicalProfile, None, None]:
-<<<<<<< HEAD
         """Yield every resolved canonical profile."""
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         yield from self._registry.values()
 
 
@@ -916,22 +747,16 @@ def _merge_scalar(
     incoming_source: str,
     sam: SourceAuthorityMatrix,
 ) -> Tuple[Any, str]:
-<<<<<<< HEAD
     """
     Choose between two scalar values for the same field using the SAM.
 
     Returns ``(winning_value, winning_source)``.
     """
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if existing_value is None:
         return (incoming_value, incoming_source)
     if incoming_value is None:
         return (existing_value, existing_source)
-<<<<<<< HEAD
     # Both present — SAM decides.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     winning_source, winning_value = sam.winner(
         field,
         {existing_source: existing_value, incoming_source: incoming_value},
@@ -946,7 +771,6 @@ def merge_profiles(
 ) -> CanonicalProfile:
     """
     Merge ``incoming`` into ``base`` using the Source Authority Matrix.
-<<<<<<< HEAD
 
     Rules:
       - Scalar fields: SAM score decides the winner.
@@ -960,10 +784,6 @@ def merge_profiles(
     incoming_src = incoming.provenance[0].source if incoming.provenance else "unknown"
 
     # Determine the primary source of the base profile.
-=======
-    """
-    incoming_src = incoming.provenance[0].source if incoming.provenance else "unknown"
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     base_src = base.provenance[0].source if base.provenance else "unknown"
 
     # --- full_name ---
@@ -974,20 +794,14 @@ def merge_profiles(
         base.full_name = winner_name
         base.add_provenance("full_name", winner_src, "authority_merge")
 
-<<<<<<< HEAD
     # --- emails (union) ---
     merged_emails = list(
         dict.fromkeys(base.emails + incoming.emails)
     )  # preserve order, dedup
-=======
-    # --- emails ---
-    merged_emails = list(dict.fromkeys(base.emails + incoming.emails))
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if merged_emails != base.emails:
         base.emails = merged_emails
         base.add_provenance("emails", incoming_src, "union_merge")
 
-<<<<<<< HEAD
     # --- phones (union, preferring ATS) ---
     incoming_phones = [p for p in incoming.phones if p not in base.phones]
     if incoming_phones:
@@ -995,22 +809,11 @@ def merge_profiles(
             base.phones = incoming.phones + [
                 p for p in base.phones if p not in incoming.phones
             ]
-=======
-    # --- phones ---
-    incoming_phones = [p for p in incoming.phones if p not in base.phones]
-    if incoming_phones:
-        if sam.score("phones", incoming_src) >= sam.score("phones", base_src):
-            base.phones = incoming.phones + [p for p in base.phones if p not in incoming.phones]
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         else:
             base.phones = base.phones + incoming_phones
         base.add_provenance("phones", incoming_src, "authority_merge")
 
-<<<<<<< HEAD
     # --- location (field-level merge) ---
-=======
-    # --- location ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if base.location.city is None and incoming.location.city:
         base.location.city = incoming.location.city
         base.add_provenance("location.city", incoming_src, "authority_merge")
@@ -1018,11 +821,7 @@ def merge_profiles(
         base.location.country = incoming.location.country
         base.add_provenance("location.country", incoming_src, "authority_merge")
 
-<<<<<<< HEAD
     # --- links (union — different sources give different link types) ---
-=======
-    # --- links ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if not base.links.github and incoming.links.github:
         base.links.github = incoming.links.github
         base.add_provenance("links.github", incoming_src, "direct_map")
@@ -1038,29 +837,18 @@ def merge_profiles(
         base.headline = winner_hl
         base.add_provenance("headline", winner_src_hl, "authority_merge")
 
-<<<<<<< HEAD
     # --- skills (union + dedup, GitHub wins on confidence) ---
-=======
-    # --- skills ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     all_skill_tuples: List[Tuple[str, float, List[str]]] = [
         (s.name, s.confidence, s.sources) for s in base.skills
     ] + [(s.name, s.confidence, s.sources) for s in incoming.skills]
     if all_skill_tuples:
         deduped = deduplicate_skills(all_skill_tuples)
-<<<<<<< HEAD
         base.skills = [
             Skill(name=n, confidence=c, sources=srcs) for n, c, srcs in deduped
         ]
         base.add_provenance("skills", incoming_src, "union_merge")
 
     # --- experience (company-keyed merge) ---
-=======
-        base.skills = [Skill(name=n, confidence=c, sources=srcs) for n, c, srcs in deduped]
-        base.add_provenance("skills", incoming_src, "union_merge")
-
-    # --- experience ---
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     base_exp_map: Dict[str, ExperienceEntry] = {
         (e.company or "").lower(): e for e in base.experience
     }
@@ -1068,10 +856,7 @@ def merge_profiles(
         key = (inc_entry.company or "").lower()
         if key in base_exp_map:
             existing = base_exp_map[key]
-<<<<<<< HEAD
             # Merge title: SAM decides.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
             if existing.title and inc_entry.title and existing.title != inc_entry.title:
                 _, title_winner = _merge_scalar(
                     "title",
@@ -1082,7 +867,6 @@ def merge_profiles(
                     sam,
                 )
                 existing.title = title_winner
-<<<<<<< HEAD
                 base.add_provenance(
                     "experience[].title", incoming_src, "authority_merge"
                 )
@@ -1092,12 +876,6 @@ def merge_profiles(
                 base.add_provenance(
                     "experience[].start", incoming_src, "authority_merge"
                 )
-=======
-                base.add_provenance("experience[].title", incoming_src, "authority_merge")
-            if not existing.start and inc_entry.start:
-                existing.start = inc_entry.start
-                base.add_provenance("experience[].start", incoming_src, "authority_merge")
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
             if not existing.end and inc_entry.end:
                 existing.end = inc_entry.end
                 base.add_provenance("experience[].end", incoming_src, "authority_merge")
@@ -1106,13 +884,9 @@ def merge_profiles(
             base_exp_map[key] = inc_entry
             base.add_provenance("experience", incoming_src, "authority_merge")
 
-<<<<<<< HEAD
     # --- provenance: append incoming's records ---
     base.provenance.extend(incoming.provenance)
 
-=======
-    base.provenance.extend(incoming.provenance)
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     return base
 
 
@@ -1120,7 +894,6 @@ def merge_profiles(
 # Stage 5 — Decoupled Projection Layer
 # ============================================================================
 
-<<<<<<< HEAD
 # Regex patterns for full-path matching (applied before any splitting).
 # Handles paths like "skills[].name" or "experience[].title" holistically.
 _FULL_ARRAY_ATTR_RE = re.compile(r"^(\w+)\[\]\.(\w+)$")  # skills[].name
@@ -1163,21 +936,6 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
     # ------------------------------------------------------------------
     # Priority 1: "skills[].name"  — full-path array-attribute extraction
     # ------------------------------------------------------------------
-=======
-
-_FULL_ARRAY_ATTR_RE = re.compile(r"^(\w+)\[\]\.(\w+)$")
-_FULL_ARRAY_BARE_RE = re.compile(r"^(\w+)\[\]$")
-_FULL_ARRAY_IDX_RE = re.compile(r"^(\w+)\[(\d+)\]$")
-
-_SEG_ARRAY_IDX_RE = re.compile(r"^(\w+)\[(\d+)\]$")
-_SEG_ARRAY_BARE_RE = re.compile(r"^(\w+)\[\]$")
-
-
-def _resolve_path(data: Dict[str, Any], path: str) -> Any:
-    if not path or not isinstance(data, dict):
-        return None
-
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     m = _FULL_ARRAY_ATTR_RE.match(path)
     if m:
         key, attr = m.group(1), m.group(2)
@@ -1186,24 +944,18 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
             return [item.get(attr) if isinstance(item, dict) else None for item in lst]
         return None
 
-<<<<<<< HEAD
     # ------------------------------------------------------------------
     # Priority 2: "experience[]"  — return the whole top-level list
     # ------------------------------------------------------------------
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     m = _FULL_ARRAY_BARE_RE.match(path)
     if m:
         key = m.group(1)
         val = data.get(key)
         return val if isinstance(val, list) else None
 
-<<<<<<< HEAD
     # ------------------------------------------------------------------
     # Priority 3: "emails[0]"  — top-level indexed access (no dot)
     # ------------------------------------------------------------------
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     m = _FULL_ARRAY_IDX_RE.match(path)
     if m and "." not in path:
         key, idx = m.group(1), int(m.group(2))
@@ -1212,12 +964,9 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
             return lst[idx]
         return None
 
-<<<<<<< HEAD
     # ------------------------------------------------------------------
     # Priority 4: segment-by-segment dot-notation  ("location.city", etc.)
     # ------------------------------------------------------------------
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     parts = path.split(".")
     current: Any = data
 
@@ -1225,10 +974,7 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
         if current is None:
             return None
 
-<<<<<<< HEAD
         # Indexed segment inside a dot-path, e.g. "phones[0]" as a segment
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         m_idx = _SEG_ARRAY_IDX_RE.match(part)
         if m_idx:
             key, idx = m_idx.group(1), int(m_idx.group(2))
@@ -1239,10 +985,7 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
                 return None
             continue
 
-<<<<<<< HEAD
         # Bare-list segment, e.g. "items[]" inside a dot-path
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         m_bare = _SEG_ARRAY_BARE_RE.match(part)
         if m_bare:
             key = m_bare.group(1)
@@ -1250,10 +993,7 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
             current = val if isinstance(val, list) else None
             continue
 
-<<<<<<< HEAD
         # Plain key
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         if isinstance(current, dict):
             current = current.get(part)
         else:
@@ -1263,7 +1003,6 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
 
 
 def _apply_projection_normalize(value: Any, hint: Optional[str]) -> Any:
-<<<<<<< HEAD
     """
     Apply an optional normalization hint inside the projection layer.
 
@@ -1271,8 +1010,6 @@ def _apply_projection_normalize(value: Any, hint: Optional[str]) -> Any:
       - ``"E164"``      → re-validate / re-format phone numbers.
       - ``"canonical"`` → re-apply skill canonical lookup on string values.
     """
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if hint is None or value is None:
         return value
 
@@ -1297,7 +1034,6 @@ def project(
     profile: CanonicalProfile,
     config: RuntimeConfig,
 ) -> Dict[str, Any]:
-<<<<<<< HEAD
     """
     Reshape the internal CanonicalProfile into the output format described by
     the RuntimeConfig.
@@ -1308,8 +1044,6 @@ def project(
          and write the result to the output dict under ``spec.path``.
       3. Return the output dict (validation is done in Stage 6).
     """
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     canonical_dict = profile.model_dump_output(
         include_confidence=config.include_confidence
     )
@@ -1318,32 +1052,11 @@ def project(
     for spec in config.fields:
         source_path = spec.from_path if spec.from_path else spec.path
         raw_value = _resolve_path(canonical_dict, source_path)
-<<<<<<< HEAD
 
         # Apply projection-time normalization hint.
         value = _apply_projection_normalize(raw_value, spec.normalize)
 
         # Type coercion hints (best-effort; never raise).
-=======
-        
-        # --- DEFENSIVE FIX FOR THE .STRIP() TYPE MISMATCH ---
-        # If the schema path is looking for a string property (like 'skills') but 
-        # encounters an internal metadata dictionary wrapper instead, extract the text string name.
-        if isinstance(raw_value, list):
-            processed_list = []
-            for item in raw_value:
-                if isinstance(item, dict) and "name" in item:
-                    processed_list.append(item["name"])
-                else:
-                    processed_list.append(item)
-            raw_value = processed_list
-        elif isinstance(raw_value, dict) and "name" in raw_value:
-            raw_value = raw_value["name"]
-        # -----------------------------------------------------
-
-        value = _apply_projection_normalize(raw_value, spec.normalize)
-
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
         if spec.type == "string" and isinstance(value, list):
             value = value[0] if value else None
         elif spec.type == "string[]" and isinstance(value, str):
@@ -1351,21 +1064,15 @@ def project(
 
         output[spec.path] = value
 
-<<<<<<< HEAD
     # If include_confidence is True, attach skills with full metadata.
     # The projection already handles skills[].name extraction above;
     # when no explicit skills field spec is present, include the full list.
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if config.include_confidence and "skills" not in output:
         output["skills"] = canonical_dict.get("skills", [])
 
     return output
 
-<<<<<<< HEAD
 
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
 # ============================================================================
 # Stage 6 — Validation & Output Broker
 # ============================================================================
@@ -1375,7 +1082,6 @@ def validate_and_emit(
     projected: Dict[str, Any],
     config: RuntimeConfig,
 ) -> Dict[str, Any]:
-<<<<<<< HEAD
     """
     Enforce the ``on_missing`` policy for all required fields and return the
     final, policy-compliant output dict.
@@ -1385,8 +1091,6 @@ def validate_and_emit(
       - ``omit``  → remove the key from the output entirely.
       - ``error`` → raise MissingRequiredFieldError immediately.
     """
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     result: Dict[str, Any] = {}
     policy = config.on_missing
 
@@ -1398,13 +1102,8 @@ def validate_and_emit(
             if policy == OnMissingPolicy.ERROR:
                 raise MissingRequiredFieldError(spec.path)
             elif policy == OnMissingPolicy.OMIT:
-<<<<<<< HEAD
                 continue  # Drop key entirely.
             else:  # NULL
-=======
-                continue
-            else:
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
                 result[spec.path] = None
         elif is_missing and not spec.required:
             if policy == OnMissingPolicy.OMIT:
@@ -1414,11 +1113,8 @@ def validate_and_emit(
         else:
             result[spec.path] = value
 
-<<<<<<< HEAD
     # Pass-through any extra keys that were added outside the field spec
     # (e.g. full skills list when include_confidence=True).
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     for key, val in projected.items():
         if key not in result:
             result[key] = val
@@ -1436,7 +1132,6 @@ def run_pipeline(
     config: RuntimeConfig,
     sam: Optional[SourceAuthorityMatrix] = None,
 ) -> Generator[Dict[str, Any], None, None]:
-<<<<<<< HEAD
     """
     Full end-to-end pipeline generator.
 
@@ -1462,8 +1157,6 @@ def run_pipeline(
     multi-source merging).  Ingestion itself is generator-based so no source
     file is held open during processing.
     """
-=======
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
     if sam is None:
         sam = SourceAuthorityMatrix()
 
@@ -1483,15 +1176,10 @@ def run_pipeline(
 
         existing = broker.resolve(partial)
         if existing is None:
-<<<<<<< HEAD
             # New candidate entity.
             broker.register(partial)
         else:
             # Known entity — merge incoming partial into the existing profile.
-=======
-            broker.register(partial)
-        else:
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421
             merge_profiles(existing, partial, sam)
             broker.update_email_index(existing)
 
@@ -1506,8 +1194,4 @@ def run_pipeline(
         except Exception as exc:  # noqa: BLE001
             logger.error(
                 "Failed to project/emit profile '%s': %s", profile.candidate_id, exc
-<<<<<<< HEAD
             )
-=======
-            )
->>>>>>> b22e5c18421d8065d1b1431656e4009846389421

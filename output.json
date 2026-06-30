@@ -1,0 +1,153 @@
+[
+  {
+    "full_name": "Krishna Bhat",
+    "primary_email": "krishna@example.com",
+    "phone": "+919876543210",
+    "skills": [
+      "Go",
+      "Python",
+      "SQL",
+      "Docker",
+      "Kubernetes"
+    ]
+  },
+  {
+    "full_name": "Sarah Jane O'Connor",
+    "primary_email": "sarah.oconnor@corp.io",
+    "phone": "+14155550192",
+    "skills": [
+      "dbt",
+      "Apache Spark",
+      "Apache Kafka",
+      "Python",
+      "Apache Airflow",
+      "AWS",
+      "BigQuery"
+    ]
+  },
+  {
+    "full_name": "Léa Müller-Schmidt",
+    "primary_email": "lea.muller@startup.de",
+    "phone": "+493012345678",
+    "skills": [
+      "PyTorch",
+      "TensorFlow",
+      "Python",
+      "HuggingFace",
+      "MLflow",
+      "Docker"
+    ]
+  },
+  {
+    "full_name": "Wei Zhang",
+    "primary_email": "wei.zhang@techgiant.sg",
+    "phone": "+6591234567",
+    "skills": [
+      "Kubernetes",
+      "Go",
+      "Rust",
+      "gRPC",
+      "Terraform",
+      "GCP",
+      "Linux"
+    ]
+  },
+  {
+    "full_name": "Aisha Al-Rashidi",
+    "primary_email": "aisha.rashidi@consulting.ae",
+    "phone": "+971501234567",
+    "skills": null
+  },
+  {
+    "full_name": "James O'Brien",
+    "primary_email": "james.obrien@fintech.co.uk",
+    "phone": "+447700900123",
+    "skills": null
+  },
+  {
+    "full_name": "Priya Subramaniam",
+    "primary_email": null,
+    "phone": "+918800112345",
+    "skills": null
+  },
+  {
+    "full_name": "Carlos Mendez-Rivera",
+    "primary_email": "carlos.mendez@techco.mx",
+    "phone": null,
+    "skills": null
+  },
+  {
+    "full_name": null,
+    "primary_email": "anon_candidate_110@recruiter.com",
+    "phone": "+12065550101",
+    "skills": null
+  },
+  {
+    "full_name": "Fatima Al-Hassan",
+    "primary_email": null,
+    "phone": null,
+    "skills": null
+  },
+  {
+    "full_name": "Ryo Tanaka",
+    "primary_email": "ryo.tanaka@corp.jp",
+    "phone": "+81312345678",
+    "skills": [
+      "Python",
+      "Go",
+      "Prometheus",
+      "Grafana",
+      "Kubernetes",
+      "Bash",
+      "Linux"
+    ]
+  },
+  {
+    "full_name": "Oluwaseun Adebayo",
+    "primary_email": "seun.adebayo@startupng.com",
+    "phone": "+2348034567890",
+    "skills": [
+      "scikit-learn",
+      "Python",
+      "R",
+      "Pandas",
+      "NumPy",
+      "SQL",
+      "Tableau"
+    ]
+  },
+  {
+    "full_name": "Sophie Beaumont",
+    "primary_email": "sophie.beaumont@agence.fr",
+    "phone": "+33612345678",
+    "skills": null
+  },
+  {
+    "full_name": null,
+    "primary_email": null,
+    "phone": null,
+    "skills": null
+  },
+  {
+    "full_name": "Deepti Bhat",
+    "primary_email": "deeptibt08@gmail.com",
+    "phone": "+919876543210",
+    "skills": [
+      "Python",
+      "SQL",
+      "Pandas",
+      "Docker",
+      "FastAPI",
+      "Git"
+    ]
+  },
+  {
+    "full_name": "Ghost Developer",
+    "primary_email": null,
+    "phone": null,
+    "skills": [
+      "C++",
+      "Rust"
+    ]
+  }
+]
