@@ -1,10 +1,5 @@
 # Multi-Source Candidate Data Transformer
 
-> **Eightfold Engineering Intern Assignment — Deepti Bhat**
-> A deterministic, streaming, multi-source candidate profile unification engine.
-
----
-
 ## Overview
 
 Eightfold ingests candidate data from everywhere — ATS systems, GitHub profiles, LinkedIn exports, and recruiter spreadsheets. Each source uses different field names, formats, and conventions. Downstream products need **one clean, canonical profile per candidate**: a fixed set of fields, normalized formats, de-duplicated across sources, and a full record of where every value came from and how confident the system is.
@@ -82,15 +77,15 @@ python main.py \
     --pretty
 ```
 
-### All four sources
+### All four sources (in cmd.exe)
 ```bash
-python main.py \
-    --source ats:data/ats_source.json \
-    --source github:data/github_source.json \
-    --source linkedin:data/linkedin_source.json \
-    --source recruiter_csv:data/recruiter_source.csv \
-    --config data/runtime_config.json \
-    --pretty
+python main.py ^
+  --source ats:data/ats_source.json ^
+  --source github:data/github_source.json ^
+  --source linkedin:data/linkedin_source.json ^
+  --source recruiter_csv:data/recruiter_source.csv ^
+  --config data/runtime_config.json ^
+  --pretty
 ```
 
 ### Custom config (field renaming + omit policy)
