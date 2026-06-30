@@ -438,13 +438,6 @@ def normalize_github_record(raw: Dict[str, Any]) -> CanonicalProfile:
 
 
 def normalize_linkedin_record(raw: Dict[str, Any]) -> CanonicalProfile:
-    """
-    Normalize a raw LinkedIn profile record into a partial CanonicalProfile.
-
-    LinkedIn fields handled:
-      profile_url (→ links.linkedin), full_name, email, headline,
-      location_raw (→ location), skills (→ skills), experience, education.
-    """
     source = "linkedin"
     url_val, _, _ = normalize_linkedin_url(raw.get("profile_url"))
     handle = (url_val or "").split("/in/")[-1].strip("/") or f"li_{id(raw)}"
@@ -571,13 +564,6 @@ def normalize_linkedin_record(raw: Dict[str, Any]) -> CanonicalProfile:
 
 
 def normalize_recruiter_csv_record(raw: Dict[str, Any]) -> CanonicalProfile:
-    """
-    Normalize a raw recruiter CSV row into a partial CanonicalProfile.
-
-    CSV columns handled:
-      candidate_id, name, email_address, phone_raw, organization,
-      role_title, country_name, city_name, years_experience, skills_raw.
-    """
     source = "recruiter_csv"
     cid = (raw.get("candidate_id") or "").strip() or f"csv_{id(raw)}"
     profile = CanonicalProfile(candidate_id=cid)
@@ -683,17 +669,6 @@ def normalize_record(raw: Dict[str, Any]) -> CanonicalProfile:
 
 
 class IdentityBroker:
-    """
-    Maintains an in-memory registry of known candidate profiles, keyed by
-    normalised email address.
-
-    Resolution strategy (in priority order):
-      1. Exact normalised-email match → same entity.
-      2. If no email match, treat as new entity.
-
-    Name discrepancies between records with a matching email are tolerated;
-    the Data Merge Engine resolves which name wins.
-    """
 
     def __init__(self) -> None:
         # email → canonical_id
@@ -769,18 +744,6 @@ def merge_profiles(
     incoming: CanonicalProfile,
     sam: SourceAuthorityMatrix,
 ) -> CanonicalProfile:
-    """
-    Merge ``incoming`` into ``base`` using the Source Authority Matrix.
-
-    Rules:
-      - Scalar fields: SAM score decides the winner.
-      - List fields (emails, phones): union, deduplicated.
-      - Skills: union + deduplication with max-confidence merge.
-      - Experience: company-keyed merge; incoming wins on title if SAM score higher.
-      - Provenance: all records from both profiles are retained.
-
-    The merge is *non-destructive*: ``base`` is mutated in-place and returned.
-    """
     incoming_src = incoming.provenance[0].source if incoming.provenance else "unknown"
 
     # Determine the primary source of the base profile.
@@ -906,30 +869,6 @@ _SEG_ARRAY_BARE_RE = re.compile(r"^(\w+)\[\]$")  # bare list key segment
 
 
 def _resolve_path(data: Dict[str, Any], path: str) -> Any:
-    """
-    Navigate a nested dict / list structure using a dot-and-bracket path.
-
-    Supported syntax (evaluated in priority order on the *full* path first,
-    then falls back to segment-by-segment dot-notation traversal):
-
-      ``"full_name"``         → simple top-level key
-      ``"location.city"``    → nested dot-notation key traversal
-      ``"emails[0]"``        → top-level array index access
-      ``"skills[].name"``    → extract one attribute from every list element
-      ``"experience[]"``     → return the entire top-level list
-      ``"links.github"``     → nested dot traversal (two plain keys)
-
-    Returns ``None`` — never raises — when any segment is absent or the path
-    leads to an incompatible type.
-
-    Implementation note
-    -------------------
-    ``path.split(".")`` naively splits ``"skills[].name"`` into the tokens
-    ``["skills[]", "name"]``, breaking the array-attribute regex that expects
-    the combined form.  We therefore test the *full* path string against the
-    compound patterns **before** splitting, and only fall back to segment
-    iteration for plain dot-notation paths.
-    """
     if not path or not isinstance(data, dict):
         return None
 
@@ -1003,13 +942,6 @@ def _resolve_path(data: Dict[str, Any], path: str) -> Any:
 
 
 def _apply_projection_normalize(value: Any, hint: Optional[str]) -> Any:
-    """
-    Apply an optional normalization hint inside the projection layer.
-
-    Currently supported hints:
-      - ``"E164"``      → re-validate / re-format phone numbers.
-      - ``"canonical"`` → re-apply skill canonical lookup on string values.
-    """
     if hint is None or value is None:
         return value
 
@@ -1034,16 +966,6 @@ def project(
     profile: CanonicalProfile,
     config: RuntimeConfig,
 ) -> Dict[str, Any]:
-    """
-    Reshape the internal CanonicalProfile into the output format described by
-    the RuntimeConfig.
-
-    Steps:
-      1. Serialise the canonical profile to a plain dict.
-      2. For each FieldSpec, resolve the source path, apply any normalize hint,
-         and write the result to the output dict under ``spec.path``.
-      3. Return the output dict (validation is done in Stage 6).
-    """
     canonical_dict = profile.model_dump_output(
         include_confidence=config.include_confidence
     )
@@ -1082,15 +1004,6 @@ def validate_and_emit(
     projected: Dict[str, Any],
     config: RuntimeConfig,
 ) -> Dict[str, Any]:
-    """
-    Enforce the ``on_missing`` policy for all required fields and return the
-    final, policy-compliant output dict.
-
-    Policies:
-      - ``null``  → keep the key; set its value to None (JSON null).
-      - ``omit``  → remove the key from the output entirely.
-      - ``error`` → raise MissingRequiredFieldError immediately.
-    """
     result: Dict[str, Any] = {}
     policy = config.on_missing
 
@@ -1132,31 +1045,6 @@ def run_pipeline(
     config: RuntimeConfig,
     sam: Optional[SourceAuthorityMatrix] = None,
 ) -> Generator[Dict[str, Any], None, None]:
-    """
-    Full end-to-end pipeline generator.
-
-    Processes an arbitrary number of source files in a streaming fashion,
-    yielding one fully-projected output dict per resolved candidate entity.
-
-    Parameters
-    ----------
-    source_paths:
-        List of ``(source_type, Path)`` pairs to ingest.
-    config:
-        Loaded RuntimeConfig controlling field projection and output policy.
-    sam:
-        Optional custom Source Authority Matrix; defaults to the built-in weights.
-
-    Yields
-    ------
-    Projected and validated output dicts, one per unique candidate identity.
-
-    Memory model
-    ------------
-    The identity broker holds all resolved profiles in memory (necessary for
-    multi-source merging).  Ingestion itself is generator-based so no source
-    file is held open during processing.
-    """
     if sam is None:
         sam = SourceAuthorityMatrix()
 

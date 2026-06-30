@@ -456,11 +456,6 @@
 <!-- ══ HERO ═════════════════════════════════════════════ -->
 <section id="hero">
   <div class="container hero-inner">
-    <div class="hero-eyebrow fade-up">
-      <span class="badge badge-red">Eightfold Engineering Intern</span>
-      <span class="badge badge-gold">Jul – Dec 2026</span>
-      <span class="badge badge-green"><span class="live-dot"></span>All Tests Passing</span>
-    </div>
 
     <h1 class="fade-up delay-1">
       Multi-Source<br/>
@@ -516,7 +511,7 @@
       <div class="tl-item">
         <div class="tl-dot">🔍</div>
         <div class="tl-content">
-          <div class="tl-phase">Day 1 — Problem Analysis</div>
+          <div class="tl-phase">Problem Analysis</div>
           <div class="tl-title">Understanding the Multi-Source Challenge</div>
           <div class="tl-desc">Read the Eightfold problem statement carefully. The core insight: "wrong-but-confident is worse than honestly-empty." Every field needs a provenance record. Downstream products depend on trustworthiness, not completeness.</div>
           <div class="tl-tags">
@@ -529,7 +524,7 @@
       <div class="tl-item">
         <div class="tl-dot">🏗️</div>
         <div class="tl-content">
-          <div class="tl-phase">Day 2 — Technical Design</div>
+          <div class="tl-phase">Technical Design</div>
           <div class="tl-title">Designing the 6-Stage Pipeline</div>
           <div class="tl-desc">Designed the stage separation: Ingest → Normalize → Identity Resolve → Merge → Project → Validate. Key decision: use generators throughout ingestion so memory usage is O(candidates) not O(sources × candidates). Chose Pydantic v2 for schema validation.</div>
           <div class="tl-tags">
@@ -543,7 +538,7 @@
       <div class="tl-item">
         <div class="tl-dot">⚙️</div>
         <div class="tl-content">
-          <div class="tl-phase">Day 3-4 — Core Implementation</div>
+          <div class="tl-phase">Core Implementation</div>
           <div class="tl-title">Building Normalizers & Identity Resolution</div>
           <div class="tl-desc">Implemented pure, stateless normalizer functions returning (value, confidence, method) triples. Built the email-keyed IdentityBroker. Key challenge: E.164 phone normalization — detecting prose values like "Call after 5 PM" before attempting to parse digits.</div>
           <div class="tl-tags">
@@ -557,7 +552,7 @@
       <div class="tl-item">
         <div class="tl-dot">⚖️</div>
         <div class="tl-content">
-          <div class="tl-phase">Day 5 — Merge Engine</div>
+          <div class="tl-phase">Merge Engine</div>
           <div class="tl-title">Source Authority Matrix — Deterministic Conflict Resolution</div>
           <div class="tl-desc">Built the SAM: a static weight table mapping (field × source) → authority score. When two sources disagree, the higher-scored source wins. Deliberately no ML — same inputs always produce the same output. Critical for audit trails in hiring decisions.</div>
           <div class="tl-tags">
@@ -571,7 +566,7 @@
       <div class="tl-item">
         <div class="tl-dot">📊</div>
         <div class="tl-content">
-          <div class="tl-phase">Phase 2 — Scale-Up</div>
+          <div class="tl-phase">Scale-Up</div>
           <div class="tl-title">Dataset Expansion: 1 → 35+ Candidates, 4 Source Types</div>
           <div class="tl-desc">Added LinkedIn JSON and Recruiter CSV adapters. Expanded dataset from 1 candidate to 35+ covering 15+ countries, all-caps names, null sentinels, malformed phones, duplicate emails, empty rows, and ghost profiles. Extended skill taxonomy to 80+ entries.</div>
           <div class="tl-tags">
@@ -585,7 +580,7 @@
       <div class="tl-item">
         <div class="tl-dot">🧪</div>
         <div class="tl-content">
-          <div class="tl-phase">Phase 3 — Testing</div>
+          <div class="tl-phase">Testing</div>
           <div class="tl-title">80+ Tests: Edge Cases, Integration, Happy Paths</div>
           <div class="tl-desc">Wrote comprehensive pytest suites covering every normalizer and pipeline stage. Key tests: prose phone rejected, null sentinel name, same email across sources merges to one profile, on_missing=error raises correctly, garbage JSON source doesn't crash pipeline.</div>
           <div class="tl-tags">
